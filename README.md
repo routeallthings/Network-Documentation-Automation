@@ -1,6 +1,6 @@
-# Switch Validator
+# Device Validator
 
-The goal of this script was to be able to take XLSX data and validate switch configuration and access.
+The goal of this script was to be able to take XLSX data and validate switch configuration and access, health, and run some failover testing on the device.
 
 ## Getting Started
 
@@ -14,7 +14,7 @@ Report any issues to my email and I will get them fixed.
 
 ### Prerequisites
 
-GIT (This is required to download the XLHELPER module using a fork that  I made for compatibility with Python 2.7)
+GIT (This is required to download the XLHELPER module using a fork that I modified for compatibility with Python 2.7)
 XLHELPER
 OPENPYXL
 
