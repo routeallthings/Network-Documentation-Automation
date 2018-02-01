@@ -1,0 +1,6 @@
+Value SYS_TEMP (\d+)
+Value SYS_STATE (\S+)
+
+Start
+  ^.*System Temperature Value: ${SYS_TEMP}
+  ^.*System Temperature State: ${SYS_STATE} -> Record

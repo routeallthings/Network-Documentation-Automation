@@ -1,0 +1,25 @@
+Value Required INTERFACE (\S+)
+Value LINK_STATUS (\w+)
+Value PROTOCOL_STATUS (.*)
+Value HARDWARE_TYPE ([\w ]+)
+Value ADDRESS ([a-zA-Z0-9]+.[a-zA-Z0-9]+.[a-zA-Z0-9]+)
+Value BIA ([a-zA-Z0-9]+.[a-zA-Z0-9]+.[a-zA-Z0-9]+)
+Value DUPLEX (.+?)
+Value SPEED (.+?)
+Value INPUT_ERRORS (\d+)
+Value CRC_ERRORS (\d+)
+Value OUTPUT_ERRORS (\d+)
+Value COLLISIONS (\d+)
+Value INTERFACE_RESETS (\d+)
+
+
+Start
+  ^${INTERFACE} is ${LINK_STATUS}.*protocol is ${PROTOCOL_STATUS}
+  ^\s+Hardware is ${HARDWARE_TYPE} -> Continue
+  ^.*address is ${ADDRESS}.*bia ${BIA}
+  ^\s+${DUPLEX}, ${SPEED}, media type
+  ^\s+${INPUT_ERRORS} input errors -> Continue
+  ^.*${CRC_ERRORS} CRC
+  ^\s+${OUTPUT_ERRORS} output errors -> Continue
+  ^.*${COLLISIONS} collisions -> Continue
+  ^.*${INTERFACE_RESETS} interface  -> Record
