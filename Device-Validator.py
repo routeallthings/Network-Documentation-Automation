@@ -65,6 +65,16 @@ except ImportError:
 	else:
 		print 'You selected an option other than yes. Please be aware that this script requires the use of FileInput. Please install manually and retry'
 		sys.exit()
+try:
+	import urllib
+except ImportError:
+	urllibinstallstatus = fullpath = raw_input ('urllib module is missing, would you like to automatically install? (Y/N): ')
+	if "Y" in urllibinstallstatus.upper() or "YES" in urllibinstallstatus.upper():
+		os.system('python -m pip install urllib')
+		import urllib
+	else:
+		print "You selected an option other than yes. Please be aware that this script requires the use of urllib. Please install manually and retry"
+		sys.exit()
 #	
 # Darth-Veitcher Module https://github.com/darth-veitcher/xlhelper
 #
@@ -202,8 +212,7 @@ def DEF_STARTALLTESTS(sshdevice):
 	if configurationv == 1:
 		DEF_GATHERDATA(sshdevice)
 	if healthcheckv == 1:
-		#DEF_HEALTHCHECK(sshdevice)
-		print ''
+		DEF_HEALTHCHECK(sshdevice)
 
 def DEF_WRITEOUTPUT(sshcommand,sshresult,sshdevicehostname,outputfolder):
 	sshcommandfile = sshcommand.replace(' ','')
@@ -277,6 +286,9 @@ def DEF_GATHERDATA(sshdevice):
 		#Show Inventory
 		sshcommand = showinv
 		sshresult = sshnet_connect.send_command(sshcommand)
+		#### Find Type of Device ####
+		if 'WS-C' in sshresult:
+			deviceswitch = 'y'
 		if not 'invalid' in sshresult:
 			DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)		
 		## FIND SWITCH VAR FROM INV##
@@ -431,28 +443,32 @@ def DEF_HEALTHCHECK(sshdevice):
 	### FSM Templates ###
 	# FSM Show Interface
 	if "cisco_ios" in sshdevicetype:
-		fsmshowinturl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/templates/master/cisco_ios_show_interfaces_health.template"
+		fsmshowinturl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/master/templates/cisco_ios_show_interfaces_health.template"
 	if "cisco_xe" in sshdevicetype:
-		fsmshowinturl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/templates/master/cisco_ios_show_interfaces_health.template"
+		fsmshowinturl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/master/templates/cisco_ios_show_interfaces_health.template"
 	if "cisco_nxos" in sshdevicetype:
 		fsmshowinturl = "placeholder"
 	fsmtemplatename = sshdevicetype + '_fsmshowint.fsm'
-	if not fsmtemplatename.exists():
+	if not os.path.isfile(fsmtemplatename):
 		urllib.urlretrieve(fsmshowinturl, fsmtemplatename)
 	fsmtemplatenamefile = open(fsmtemplatename)
 	fsminttemplate = textfsm.TextFSM(fsmtemplatenamefile)
+	tempfilelist.append(fsmtemplatenamefile)
+	fsmtemplatenamefile.close()
 	# FSM Show Temperature
 	if "cisco_ios" in sshdevicetype:
-		fsmshowinturl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/templates/master/cisco_ios_show_temp_health.template"
+		fsmshowinturl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/master/templates/cisco_ios_show_temp_health.template"
 	if "cisco_xe" in sshdevicetype:
-		fsmshowinturl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/templates/master/cisco_ios_show_temp_health.template"
+		fsmshowinturl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/master/templates/cisco_ios_show_temp_health.template"
 	if "cisco_nxos" in sshdevicetype:
 		fsmshowinturl = "placeholder"	
 	fsmtemplatename = sshdevicetype + '_fsmshowtemp.fsm'
-	if not fsmtemplatename.exists():
+	if not os.path.isfile(fsmtemplatename):
 		urllib.urlretrieve(fsmshowinturl, fsmtemplatename)
 	fsmtemplatenamefile = open(fsmtemplatename)
-	fsmtemptemplate = textfsm.TextFSM(fsmtemplatenamefile)	
+	fsmtemptemplate = textfsm.TextFSM(fsmtemplatenamefile)
+	tempfilelist.append(fsmtemplatenamefile)
+	fsmtemplatenamefile.close()
 	#Start Connection
 	try:
 		sshnet_connect = ConnectHandler(device_type=sshdevicetype, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret)
@@ -463,7 +479,6 @@ def DEF_HEALTHCHECK(sshdevice):
 			sshdevicehostname = sshdevicehostname.strip('>')
 			sshdevicehostname = sshnet_connect.find_prompt()
 			sshdevicehostname = sshdevicehostname.strip('#')
-		print 'Successfully connected to ' + sshdevicehostname
 		print 'Health Check starting on ' + sshdevicehostname
 		#Show Interfaces
 		sshcommand = showinterface
@@ -471,61 +486,90 @@ def DEF_HEALTHCHECK(sshdevice):
 		hcshowint = fsminttemplate.ParseText(sshresult)
 		#Parse through each interface looking for issues
 		for hcshowintsingle in hcshowint:
-			hcerrorcount = 0
 			hcinterfacename = hcshowintsingle[0].encode('utf-8')
 			if not 'notconnect' in hcshowintsingle[2]:
 				# Look for duplexing issues
 				if 'Half-duplex' in hcshowintsingle[6]:
 					hcerror = 'Duplex Mismatch'
 					hcdescription = '(Interface is showing as half-duplex. If this is by design please ignore.'
-					healthcheckcsv.append (sshdevicehostname,hcerror,hcdescription)
+					healthcheckcsv.append ((sshdevicehostname + ',' + hcerror + ',' + hcdescription))
 				if '10Mb/s' in hcshowintsingle[7]:
 					hcerror = 'Duplex Mismatch'
 					hcdescription = 'Interface is showing as 10Mb/s. If this is by design please ignore.'
-					healthcheckcsv.append (sshdevicehostname,hcerror,hcdescription)
+					healthcheckcsv.append ((sshdevicehostname + ',' + hcerror + ',' + hcdescription))
 				# Look for interface counter errors
 				# Input Errors
-				if hcshowintsingle[8] > 0:
+				hcshowintsingleint = hcshowintsingle[8]
+				if hcshowintsingleint == '':
+					hcshowintsingleint = 0
+				hcshowintsingleint = int(hcshowintsingleint)
+				if hcshowintsingleint > 0:
 					hcerror = 'Input Errors'
-					hcinterfacecounter = hcshowintsingle[8].encode('utf-8')
+					hcinterfacecounter = hcshowintsingle[8]
+					hcinterfacecounter = hcinterfacecounter.encode('utf-8')
 					hcdescription = 'Interface is showing ' + hcinterfacecounter + ' input errors. Usually indicative of a bad link (cabling and/or optic failure).'
-					healthcheckcsv.append (sshdevicehostname,hcerror,hcdescription)
+					healthcheckcsv.append ((sshdevicehostname + ',' + hcerror + ',' + hcdescription))
 				# CRC errors
-				if hcshowintsingle[9] > 0:
+				hcshowintsingleint = hcshowintsingle[9]
+				if hcshowintsingleint == '':
+					hcshowintsingleint = 0
+				hcshowintsingleint = int(hcshowintsingleint)			
+				if hcshowintsingleint > 0:
 					hcerror = 'CRC Errors'
-					hcinterfacecounter = hcshowintsingle[9].encode('utf-8')
+					hcinterfacecounter = hcshowintsingle[9]
+					hcinterfacecounter = hcinterfacecounter
+					hcinterfacecounter = hcinterfacecounter.encode('utf-8')
 					hcdescription = 'Interface is showing ' + hcinterfacecounter + ' CRC errors. Usually indicative of incorrect duplexing settings or a bad link (cabling and/or optic failure).'
-					healthcheckcsv.append (sshdevicehostname,hcerror,hcdescription)
+					healthcheckcsv.append ((sshdevicehostname + ',' + hcerror + ',' + hcdescription))
 				# Output errors
-				if hcshowintsingle[10] > 10000:
+				hcshowintsingleint = hcshowintsingle[10]
+				if hcshowintsingleint == '':
+					hcshowintsingleint = 0
+				hcshowintsingleint = int(hcshowintsingleint)		
+				if hcshowintsingleint > 10000:
 					hcerror = 'Saturated Link'
-					hcinterfacecounter = hcshowintsingle[10].encode('utf-8')
+					hcinterfacecounter = hcshowintsingle[10]
+					hcinterfacecounter = hcinterfacecounter.encode('utf-8')
 					hcdescription = 'Interface is showing ' + hcinterfacecounter + ' output errors. This is usually indicative of a saturated interface.  '
-					healthcheckcsv.append (sshdevicehostname,hcerror,hcdescription)
+					healthcheckcsv.append ((sshdevicehostname + ',' + hcerror + ',' + hcdescription))
 				# Collisions
-				if hcshowintsingle[11] > 0:
+				hcshowintsingleint = hcshowintsingle[11]
+				if hcshowintsingleint == '':
+					hcshowintsingleint = 0
+				hcshowintsingleint = int(hcshowintsingleint)
+				if hcshowintsingleint > 0:
 					hcerror = 'Shared Medium'
-					hcinterfacecounter = hcshowintsingle[11].encode('utf-8')
+					hcinterfacecounter = hcshowintsingle[11]
+					hcinterfacecounter = hcinterfacecounter.encode('utf-8')
 					hcdescription = 'Interface is showing ' + hcinterfacecounter + ' collisions.  '
-					healthcheckcsv.append (sshdevicehostname,hcerror,hcdescription)		
+					healthcheckcsv.append ((sshdevicehostname + ',' + hcerror + ',' + hcdescription))		
 				# Interface resets
-				if hcshowintsingle[10] > 20:
+				hcshowintsingleint = hcshowintsingle[12]
+				if hcshowintsingleint == '':
+					hcshowintsingleint = 0
+				hcshowintsingleint = int(hcshowintsingleint)			
+				if hcshowintsingleint > 20:
 					hcerror = 'Interface Reset Count'
-					hcinterfacecounter = hcshowintsingle[10].encode('utf-8')
+					hcinterfacecounter = hcshowintsingle[12]
+					hcinterfacecounter = hcinterfacecounter.encode('utf-8')
 					hcdescription = 'Interface is showing ' + hcinterfacecounter + ' interface resets. '
-					healthcheckcsv.append (sshdevicehostname,hcerror,hcdescription)
+					healthcheckcsv.append ((sshdevicehostname + ',' + hcerror + ',' + hcdescription))
 		#Show Temperature
 		sshcommand = showtemp
 		sshresult = sshnet_connect.send_command(sshcommand)
-		hcshowtemp = fsminttemplate.ParseText(sshresult)
-		hctempdegrees = hcshowtemp[0].encode('utf-8')
-		hctempdegreesint = hctempdegress.int
+		hcshowtemp = fsmtemptemplate.ParseText(sshresult)
+		hctempdegrees = hcshowtemp[0]
+		hctempdegrees = hctempdegrees[0]
+		hctempdegrees = hctempdegrees.encode('utf-8')
+		hctempdegreesint = int(hctempdegrees)
 		if hctempdegreesint > 45:
 			hcerror = 'Temperature Alert'
 			hcdescription = 'Temperature has been recorded at ' + hctempdegrees + ' Celsius. Please lower the temperature for the surrounding environment '
-			healthcheckcsv.append (sshdevicehostname,hcerror,hcdescription)		
+			healthcheckcsv.append ((sshdevicehostname + ',' + hcerror + ',' + hcdescription))
+		# Exit SSH
+		sshnet_connect.disconnect()
 	except Exception as e:
-		print 'Error while gather data with ' + sshdeviceip + '. Either could not connect or error with pulling information'
+		print 'Error while running health check with ' + sshdeviceip
 		print 'The exact error is..'
 		print(e)
 		try:
@@ -542,6 +586,7 @@ def DEF_HEALTHCHECK(sshdevice):
 
 # Create empty lists
 healthcheckcsv = []
+tempfilelist = []
 
 # Start of threading
 print '----Starting to gather data from equipment----'
@@ -556,22 +601,30 @@ if __name__ == "__main__":
 		if it_thread != main_thread:
 			it_thread.join()
 
+# Cleanup
+for file in tempfilelist:
+	try:
+		os.remove(file.name)
+	except:
+		pass
 # CSV Output for Healthcheck
-if healthcheckv == 1:
-	savepath = exportlocation + '\\HealthCheck.csv'
-	with open(savepath, 'wb') as csvfile:
-		fieldnames = ['Hostname', 'Error', 'Description']
-		writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-		writer.writeheader()
-		saveresultslistsplit = []
-		for saveresultsrow in healthcheckcsv:
-			saveresultslistsplit.append(saveresultsrow.strip().split(','))
-		saveresultslistsplit = [saveresultslistsplit[i:i+3] for i in range(0,len(saveresultslistsplit),3)]
-		for saveresultsplitrow in saveresultslistsplit:
-			for saveresultssplitrow2 in saveresultsplitrow:
-				saveresultsplitrow1 = saveresultssplitrow2[:1][0]
-				saveresultsplitrow2 = saveresultssplitrow2[1:][0]
-				saveresultsplitrow3 = saveresultssplitrow2[2:][0]
-				writer.writerow({'Hostname': saveresultsplitrow1, 'Error': saveresultsplitrow2, 'Description': saveresultsplitrow3})
-		
+try:
+	if healthcheckv == 1:
+		savepath = exportlocation + '\\HealthCheck.csv'
+		with open(savepath, 'wb') as csvfile:
+			fieldnames = ['Hostname', 'Error', 'Description']
+			writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+			writer.writeheader()
+			saveresultslistsplit = []
+			for saveresultsrow in healthcheckcsv:
+				saveresultslistsplit.append(saveresultsrow.strip().split(','))
+			saveresultslistsplit = [saveresultslistsplit[i:i+3] for i in range(0,len(saveresultslistsplit),3)]
+			for saveresultsplitrow in saveresultslistsplit:
+				for saveresultssplitrow2 in saveresultsplitrow:
+					saveresultsplitrow1 = saveresultssplitrow2[:1][0]
+					saveresultsplitrow2 = saveresultssplitrow2[1:][0]
+					saveresultsplitrow3 = saveresultssplitrow2[2:][0]
+					writer.writerow({'Hostname': saveresultsplitrow1, 'Error': saveresultsplitrow2, 'Description': saveresultsplitrow3})
+except:
+	print 'Could not save health check data to CSV. Please make sure you do not have the file open'
 		
