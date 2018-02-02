@@ -1,4 +1,3 @@
-Value Filldown local_host (\S+)
 Value Required dest_host (\S+)
 Value mgmt_ip (.*)
 Value platform (.*)
@@ -7,7 +6,6 @@ Value local_port (.*)
 Value version (.*)
 
 Start
-  ^${local_host}[>#].*
   ^Device ID: ${dest_host}
   ^Entry address\(es\): -> ParseIP
   ^Platform: ${platform},
@@ -18,4 +16,4 @@ ParseIP
   ^.*IP address: ${mgmt_ip} -> Start
 
 GetVersion
-^${version} -> Record Start
+  ^${version} -> Record Start
