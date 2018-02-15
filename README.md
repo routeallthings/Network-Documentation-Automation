@@ -1,6 +1,6 @@
-# Device Validator
+# Network Documentation Automation
 
-The goal of this script was to be able to take XLSX data and validate switch configuration and access, health, and run some failover testing on the device.
+The purpose of this tool is to pull information from the network via CDP/LLDP discovery or manual entry in XLSX. Please fill in the configuration tab on the templated print 'XLSX sheet, along with all the data that you want to test.
 
 ## Getting Started
 
@@ -17,27 +17,32 @@ Report any issues to my email and I will get them fixed.
 GIT (This is required to download the XLHELPER module using a fork that I modified for compatibility with Python 2.7)
 XLHELPER
 OPENPYXL
+MNETSUITE (My local fork)
+
 
 ## Deployment
 
-Just execute the script and answer the questions
+Configure the XLSX file (change only the values). After that just execute the script and answer the question.
 
 ## Features
-- XLSX-based validation script
+- CDP/LLDP Discovery and/or Manual Entry (Using XLSX)
+- Inventory
+- Health Check
+- Network Topology Mapping (Only for CDP/LLDP discovered devices currently)
 
 ## *Caveats
-- None
+- Cisco only as of right now, will add in other vendors as I get the features fleshed out.
 
 ## Versioning
 
-VERSION 1.0
+VERSION 0.5
 
 
 ## Authors
 
 * **Matt Cross** - [RouteAllThings](https://github.com/routeallthings)
 
-See also the list of [contributors](https://github.com/routeallthings/Config-Creator/contributors) who participated in this project.
+See also the list of [contributors](https://github.com/routeallthings/Network-Documentation-Automation/contributors) who participated in this project.
 
 ## License
 
@@ -46,3 +51,5 @@ This project is licensed under the GNU - see the [LICENSE.md](LICENSE.md) file f
 ## Acknowledgments
 
 * Thanks to HBS for giving me a reason to write this.
+* mnetsuite (fantastic package written by Michael Laforest (https://github.com/MJL85).
+* Netmiko

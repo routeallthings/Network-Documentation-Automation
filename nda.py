@@ -238,9 +238,9 @@ print 'XLSX sheet, along with all the data that you want to test.'
 print '##########################################################'
 print ''
 print '----Questions that need answering----'
-excelfilelocation = raw_input('File to load the excel data from (e.g. C:/Python27/nda-variables.xlsx):')
+excelfilelocation = raw_input('File to load the excel data from (e.g. C:/Python27/nda-config.xlsx):')
 if excelfilelocation == '':
-	excelfilelocation = 'C:/Python27/nda-variables.xlsx'
+	excelfilelocation = 'C:/Python27/nda-config.xlsx'
 excelfilelocation = excelfilelocation.replace('"', '')
 # Load Configuration Variables
 configdict = {}
@@ -468,9 +468,9 @@ def DEF_GATHERDATA(sshdevice):
 		#################################################################
 		# Show Inventory
 		if "cisco_ios" in sshdevicetype.lower():
-			fsmshowinvurl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/master/templates/cisco_ios_show_inventory.template"
+			fsmshowinvurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_inventory.template"
 		if "cisco_xe" in sshdevicetype.lower():
-			fsmshowinvurl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/master/templates/cisco_ios_show_inventory.template"
+			fsmshowinvurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_inventory.template"
 		if "cisco_nxos" in sshdevicetype.lower():
 			fsmshowinvurl = "placeholder"
 		fsmtemplatename = sshdevicetype.lower() + '_fsmshowinventory.fsm'
@@ -482,9 +482,9 @@ def DEF_GATHERDATA(sshdevice):
 		fsmtemplatenamefile.close()
 		# IP Arp Table
 		if "cisco_ios" in sshdevicetype.lower():
-			fsmshowiparpurl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/master/templates/cisco_ios_show_iparp.template"
+			fsmshowiparpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_iparp.template"
 		if "cisco_xe" in sshdevicetype.lower():
-			fsmshowiparpurl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/master/templates/cisco_ios_show_iparp.template"
+			fsmshowiparpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_iparp.template"
 		if "cisco_nxos" in sshdevicetype.lower():
 			fsmshowiparpurl = "placeholder"
 		fsmtemplatename = sshdevicetype.lower() + '_fsmiparptable.fsm'
@@ -496,9 +496,9 @@ def DEF_GATHERDATA(sshdevice):
 		fsmtemplatenamefile.close()
 		# Mac Table Lists
 		if "cisco_ios" in sshdevicetype.lower():
-			fsmshowmacurl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/master/templates/cisco_ios_show_mac.template"
+			fsmshowmacurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_mac.template"
 		if "cisco_xe" in sshdevicetype.lower():
-			fsmshowmacurl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/master/templates/cisco_ios_show_mac.template"
+			fsmshowmacurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_mac.template"
 		if "cisco_nxos" in sshdevicetype.lower():
 			fsmshowmacurl = "placeholder"
 		fsmtemplatename = sshdevicetype.lower() + '_fsmmactable.fsm'
@@ -511,9 +511,9 @@ def DEF_GATHERDATA(sshdevice):
 		'''
 		# Interface Lists
 		if "cisco_ios" in sshdevicetype.lower():
-			fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/master/templates/cisco_ios_show_cdp_nei_detail.template"
+			fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_cdp_nei_detail.template"
 		if "cisco_xe" in sshdevicetype.lower():
-			fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/master/templates/cisco_ios_show_cdp_nei_detail.template"
+			fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_cdp_nei_detail.template"
 		if "cisco_nxos" in sshdevicetype.lower():
 			fsmshowcdpurl = "placeholder"
 		fsmtemplatename = sshdevicetype.lower() + '_fsminterfacelists.fsm'
@@ -525,9 +525,9 @@ def DEF_GATHERDATA(sshdevice):
 		fsmtemplatenamefile.close()
 		# VLAN Lists
 		if "cisco_ios" in sshdevicetype.lower():
-			fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/master/templates/cisco_ios_show_cdp_nei_detail.template"
+			fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_cdp_nei_detail.template"
 		if "cisco_xe" in sshdevicetype.lower():
-			fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/master/templates/cisco_ios_show_cdp_nei_detail.template"
+			fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_cdp_nei_detail.template"
 		if "cisco_nxos" in sshdevicetype.lower():
 			fsmshowcdpurl = "placeholder"
 		fsmtemplatename = sshdevicetype.lower() + '_fsmvlanlists.fsm'
@@ -895,9 +895,9 @@ def DEF_HEALTHCHECK(sshdevice):
 	### FSM Templates ###
 	# FSM Show Interface
 	if "cisco_ios" in sshdevicetype:
-		fsmshowinturl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/master/templates/cisco_ios_show_interfaces_health.template"
+		fsmshowinturl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_interfaces_health.template"
 	if "cisco_xe" in sshdevicetype:
-		fsmshowinturl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/master/templates/cisco_ios_show_interfaces_health.template"
+		fsmshowinturl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_interfaces_health.template"
 	if "cisco_nxos" in sshdevicetype:
 		fsmshowinturl = "placeholder"
 	fsmtemplatename = sshdevicetype + '_fsmshowint.fsm'
@@ -909,9 +909,9 @@ def DEF_HEALTHCHECK(sshdevice):
 	fsmtemplatenamefile.close()
 	# FSM Show Temperature
 	if "cisco_ios" in sshdevicetype:
-		fsmshowtempurl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/master/templates/cisco_ios_show_temp_health.template"
+		fsmshowtempurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_temp_health.template"
 	if "cisco_xe" in sshdevicetype:
-		fsmshowtempurl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/master/templates/cisco_ios_show_temp_health.template"
+		fsmshowtempurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_temp_health.template"
 	if "cisco_nxos" in sshdevicetype:
 		fsmshowtempurl = "placeholder"	
 	fsmtemplatename = sshdevicetype + '_fsmshowtemp.fsm'
@@ -1071,9 +1071,9 @@ def DEF_CDPDISCOVERY(sshusername,sshpassword,enablesecret,cdpseedv,cdpdevicetype
 	showcdp = "show cdp neighbor detail"
 	# FSM Templates
 	if "cisco_ios" in cdpdevicetypev.lower():
-		fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/master/templates/cisco_ios_show_cdp_nei_detail.template"
+		fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_cdp_nei_detail.template"
 	if "cisco_xe" in cdpdevicetypev.lower():
-		fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/master/templates/cisco_ios_show_cdp_nei_detail.template"
+		fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_cdp_nei_detail.template"
 	if "cisco_nxos" in cdpdevicetypev.lower():
 		fsmshowcdpurl = "placeholder"
 	fsmtemplatename = cdpdevicetypev.lower() + '_fsmshowcdp.fsm'
@@ -1167,9 +1167,9 @@ def DEF_CDPDISCOVERY(sshusername,sshpassword,enablesecret,cdpseedv,cdpdevicetype
 			# FSM Templates
 			cdpdevicetype = cdpvendor.lower() + '_' + cdptype.lower()
 			if "cisco_ios" in cdpdevicetype.lower():
-				fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/master/templates/cisco_ios_show_cdp_nei_detail.template"
+				fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_cdp_nei_detail.template"
 			if "cisco_xe" in cdpdevicetype.lower():
-				fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Device-Validator/master/templates/cisco_ios_show_cdp_nei_detail.template"
+				fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_cdp_nei_detail.template"
 			if "cisco_nxos" in cdpdevicetype.lower():
 				fsmshowcdpurl = "placeholder"
 			fsmtemplatename = cdpdevicetype.lower() + '_fsmshowcdp.fsm'
