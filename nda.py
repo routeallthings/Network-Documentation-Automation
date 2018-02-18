@@ -24,6 +24,7 @@ import time
 import sys
 import json
 import logging
+import datetime
 
 # FIXES
 
@@ -37,6 +38,18 @@ if not paramiko_logger.handlers:
 paramiko_logger.addHandler(console_handler)
 
 #Module Imports (Non-Native)
+
+# Used for pulling information for MAC table
+try:
+	import requests
+except ImportError:
+	requestsinstallstatus = fullpath = raw_input ('request module is missing, would you like to automatically install? (Y/N): ')
+	if 'y' in requestsinstallstatus.lower():
+		os.system('python -m pip install requests')
+		import requests
+	else:
+		print "You selected an option other than yes. Please be aware that this script requires the use of requests. Please install manually and retry"
+		sys.exit()
 
 # Used because its the best way to connect into the switches to pull out information (besides SNMP)
 try:
@@ -68,6 +81,7 @@ except ImportError:
 try:
 	from openpyxl import load_workbook
 	from openpyxl import workbook
+	from openpyxl import Workbook
 except ImportError:
 	openpyxlinstallstatus = fullpath = raw_input ('openpyxl module is missing, would you like to automatically install? (Y/N): ')
 	if 'Y' in openpyxlinstallstatus.lower():
@@ -185,6 +199,7 @@ showinterfacet = "show interface transceiver"
 showiparp = "show ip arp"
 showmacaddress = "show mac address-table"
 showmacaddress_older = "show mac-address-table"
+showlocation = "show run | i ^snmp-server location"
 
 # Device Match Lists
 ciscoxelist = '3650 3850 9300 9400 9500 4500 4431 4451 4321 4331 4351 asr'
@@ -210,7 +225,7 @@ fwlist = fwlist.split(' ')
 ciscoverreg = '1[256]\.[1-9]\(.*\).*'
 
 # Create empty lists for script use
-healthcheckcsv = []
+healthchecklist = []
 tempfilelist = []
 cdpdevicecomplete = []
 cdpdevicediscovery = []
@@ -219,13 +234,16 @@ usernamelist = []
 
 # Create empty lists for export use
 fullinventorylist = []
-opticinventorylist = []
 ipmactablelist = []
 mactablelist = []
 iparptablelist = []
-interfacelist = []
-interfacecounts = []
+l2interfacelist = []
+l3interfacelist = []
 vlanlist = []
+poeinterfacelist = []
+
+# URLs to use
+maclookupurl = 'http://macvendors.co/api/%s'
 
 '''Global Variable Questions'''
 print ''
@@ -346,7 +364,7 @@ else:
 # MNET Exclude
 devicediscoveryexcludedsubnets = configdict.get('DeviceDiscoveryExcludedSubnets')
 if devicediscoveryexcludedsubnets == None:
-	devicediscoveryexcludedsubnets = 'NA'
+	devicediscoveryexcludedsubnets = '255.255.255.255/32'
 if ',' in devicediscoveryexcludedsubnets:
 	devicediscoveryexcludedsubnets = devicediscoveryexcludedsubnets.split(',')
 	for device in devicediscoveryexcludedsubnets:
@@ -356,7 +374,7 @@ else:
 # MNET Subnets
 devicediscoveryincludedsubnets = configdict.get('DeviceDiscoveryIncludedSubnets')
 if devicediscoveryincludedsubnets == None:
-	devicediscoveryincludedsubnets = 'NA'
+	devicediscoveryincludedsubnets = '10.0.0.0/8,192.168.0.0/16,172.16.0.0/12'
 if ',' in devicediscoveryincludedsubnets:
 	devicediscoveryincludedsubnets = devicediscoveryincludedsubnets.split(',')
 	for device in devicediscoveryincludedsubnets:
@@ -369,9 +387,9 @@ mnetgraph['link_text_size'] = 9
 mnetgraph['title_text_size'] = 15
 mnetgraph['include_svi'] = 1
 mnetgraph['include_lo'] = 1
-mnetgraph['include_serials'] = 0
-mnetgraph['get_stack_members'] = 0
-mnetgraph['get_vss_members'] = 0
+mnetgraph['include_serials'] = 1
+mnetgraph['get_stack_members'] = 1
+mnetgraph['get_vss_members'] = 1
 mnetgraph['expand_stackwise'] = 0
 mnetgraph['expand_vss'] = 0
 mnetgraph['expand_lag'] = 0
@@ -407,6 +425,11 @@ if temperature == None:
 	temperature = 'Y'
 # End of Config Variables
 # Start of Functions
+
+def DEF_REMOVEPREFIX(text, prefix):
+    if text.startswith(prefix):
+        return text[len(prefix):]
+    return text
 
 def DEF_STARTALLTESTS(sshdevice):
 	if configurationv == 1:
@@ -478,66 +501,92 @@ def DEF_GATHERDATA(sshdevice):
 			urllib.urlretrieve(fsmshowinvurl, fsmtemplatename)
 		fsmtemplatenamefile = open(fsmtemplatename)
 		fsminvtemplate = textfsm.TextFSM(fsmtemplatenamefile)
-		tempfilelist.append(fsmtemplatenamefile)
+		tempfilelist.append(fsmtemplatename)
 		fsmtemplatenamefile.close()
 		# IP Arp Table
 		if "cisco_ios" in sshdevicetype.lower():
-			fsmshowiparpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_iparp.template"
+			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_iparp.template"
 		if "cisco_xe" in sshdevicetype.lower():
-			fsmshowiparpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_iparp.template"
+			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_iparp.template"
 		if "cisco_nxos" in sshdevicetype.lower():
-			fsmshowiparpurl = "placeholder"
+			fsmshowurl = "placeholder"
 		fsmtemplatename = sshdevicetype.lower() + '_fsmiparptable.fsm'
 		if not os.path.isfile(fsmtemplatename):
-			urllib.urlretrieve(fsmshowiparpurl, fsmtemplatename)
+			urllib.urlretrieve(fsmshowurl, fsmtemplatename)
 		fsmtemplatenamefile = open(fsmtemplatename)
 		fsmarptemplate = textfsm.TextFSM(fsmtemplatenamefile)
-		tempfilelist.append(fsmtemplatenamefile)
+		tempfilelist.append(fsmtemplatename)
 		fsmtemplatenamefile.close()
 		# Mac Table Lists
 		if "cisco_ios" in sshdevicetype.lower():
-			fsmshowmacurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_mac.template"
+			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_mac.template"
 		if "cisco_xe" in sshdevicetype.lower():
-			fsmshowmacurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_mac.template"
+			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_mac.template"
 		if "cisco_nxos" in sshdevicetype.lower():
-			fsmshowmacurl = "placeholder"
+			fsmshowurl = "placeholder"
 		fsmtemplatename = sshdevicetype.lower() + '_fsmmactable.fsm'
 		if not os.path.isfile(fsmtemplatename):
-			urllib.urlretrieve(fsmshowmacurl, fsmtemplatename)
+			urllib.urlretrieve(fsmshowurl, fsmtemplatename)
 		fsmtemplatenamefile = open(fsmtemplatename)
 		fsmmactemplate = textfsm.TextFSM(fsmtemplatenamefile)
-		tempfilelist.append(fsmtemplatenamefile)
+		tempfilelist.append(fsmtemplatename)
 		fsmtemplatenamefile.close()
-		'''
-		# Interface Lists
+		# Show Version
 		if "cisco_ios" in sshdevicetype.lower():
-			fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_cdp_nei_detail.template"
+			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_version.template"
 		if "cisco_xe" in sshdevicetype.lower():
-			fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_cdp_nei_detail.template"
+			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_version.template"
 		if "cisco_nxos" in sshdevicetype.lower():
-			fsmshowcdpurl = "placeholder"
-		fsmtemplatename = sshdevicetype.lower() + '_fsminterfacelists.fsm'
+			fsmshowurl = "placeholder"
+		fsmtemplatename = sshdevicetype.lower() + '_fsmversion.fsm'
 		if not os.path.isfile(fsmtemplatename):
-			urllib.urlretrieve(fsmshowcdpurl, fsmtemplatename)
+			urllib.urlretrieve(fsmshowurl, fsmtemplatename)
 		fsmtemplatenamefile = open(fsmtemplatename)
-		fsmcdptemplate = textfsm.TextFSM(fsmtemplatenamefile)
+		fsmvertemplate = textfsm.TextFSM(fsmtemplatenamefile)
 		tempfilelist.append(fsmtemplatenamefile)
 		fsmtemplatenamefile.close()
-		# VLAN Lists
+		# Show Interface Status
 		if "cisco_ios" in sshdevicetype.lower():
-			fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_cdp_nei_detail.template"
+			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_interface_stat.template"
 		if "cisco_xe" in sshdevicetype.lower():
-			fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_cdp_nei_detail.template"
+			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_interface_stat.template"
 		if "cisco_nxos" in sshdevicetype.lower():
-			fsmshowcdpurl = "placeholder"
-		fsmtemplatename = sshdevicetype.lower() + '_fsmvlanlists.fsm'
+			fsmshowurl = "placeholder"
+		fsmtemplatename = sshdevicetype.lower() + '_fsminterfacestat.fsm'
 		if not os.path.isfile(fsmtemplatename):
-			urllib.urlretrieve(fsmshowcdpurl, fsmtemplatename)
+			urllib.urlretrieve(fsmshowurl, fsmtemplatename)
 		fsmtemplatenamefile = open(fsmtemplatename)
-		fsmcdptemplate = textfsm.TextFSM(fsmtemplatenamefile)
+		fsmintstattemplate = textfsm.TextFSM(fsmtemplatenamefile)
 		tempfilelist.append(fsmtemplatenamefile)
 		fsmtemplatenamefile.close()
-		'''
+		# Show Power Inline
+		if "cisco_ios" in sshdevicetype.lower():
+			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_powerinline.template"
+		if "cisco_xe" in sshdevicetype.lower():
+			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_powerinline.template"
+		if "cisco_nxos" in sshdevicetype.lower():
+			fsmshowurl = "placeholder"
+		fsmtemplatename = sshdevicetype.lower() + '_fsmpowerinline.fsm'
+		if not os.path.isfile(fsmtemplatename):
+			urllib.urlretrieve(fsmshowurl, fsmtemplatename)
+		fsmtemplatenamefile = open(fsmtemplatename)
+		fsmpoeporttemplate = textfsm.TextFSM(fsmtemplatenamefile)
+		tempfilelist.append(fsmtemplatenamefile)
+		fsmtemplatenamefile.close()
+		# Show IP Interface Brief
+		if "cisco_ios" in sshdevicetype.lower():
+			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_powerinline.template"
+		if "cisco_xe" in sshdevicetype.lower():
+			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_powerinline.template"
+		if "cisco_nxos" in sshdevicetype.lower():
+			fsmshowurl = "placeholder"
+		fsmtemplatename = sshdevicetype.lower() + '_fsmipintbr.fsm'
+		if not os.path.isfile(fsmtemplatename):
+			urllib.urlretrieve(fsmshowurl, fsmtemplatename)
+		fsmtemplatenamefile = open(fsmtemplatename)
+		fsmipintbrtemplate = textfsm.TextFSM(fsmtemplatenamefile)
+		tempfilelist.append(fsmtemplatenamefile)
+		fsmtemplatenamefile.close()
 		#################################################################
 		##################### DOWNLOAD TEMPLATES END ####################
 		#################################################################
@@ -574,38 +623,62 @@ def DEF_GATHERDATA(sshdevice):
 		sshcommand = showver
 		sshresult = sshnet_connect.send_command(sshcommand)
 		#### Find Type of Device ####
-		if any(word in row[2] for word in switchlist):
+		if any(word in sshresult for word in switchlist):
 			deviceswitch = 1
-		if any(word in row[2] for word in routerlist):
+		if any(word in sshresult for word in routerlist):
 			devicerouter = 1
-		if any(word in row[2] for word in fwlist):
+		if any(word in sshresult for word in fwlist):
 			devicefw = 1
 		if not 'invalid' in sshresult:
-			DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)		
+			DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)
+		# Export Version, used later in the full inventory list (NOT A GLOBAL LIST) #
+		data = fsmvertemplate.ParseText(sshresult)
+		tempversioninfo = []
+		for subrow in data:
+			# Get Version Number and attach to temporary dictionary
+			ver_ver = subrow[0]
+			ver_ser = subrow[5]
+			# Create Temp Dictionary
+			tempdict = {}
+			# Append Data to Temp Dictionary
+			tempdict['Version'] = ver_ver
+			tempdict['Serial'] = ver_ser
+			# Append Temp Dictionary to Global List
+			tempversioninfo.append(tempdict)
+		######################## Show Location #########################
+		sshcommand = showlocation
+		sshresult = sshnet_connect.send_command(sshcommand)
+		inv_location = DEF_REMOVEPREFIX(sshresult,'snmp-server location ')
 		######################## Show Inventory #########################
 		sshcommand = showinv
 		sshresult = sshnet_connect.send_command(sshcommand)
 		# Find Type of Device #
-		if any(word in row[2] for word in switchlist):
+		if any(word in sshresult for word in switchlist):
 			deviceswitch = 1
-		if any(word in row[2] for word in routerlist):
+		if any(word in sshresult for word in routerlist):
 			devicerouter = 1
-		if any(word in row[2] for word in fwlist):
+		if any(word in sshresult for word in fwlist):
 			devicefw = 1
 		if not 'invalid' in sshresult:
 			DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)
 		# Export Inventory #
 		data = fsminvtemplate.ParseText(sshresult)
-		for row in data:
+		for subrow in data:
 			# Get Product Name, Product Serial Number, Description and Stack
-			inv_pid = row[2]
-			inv_sn = row[4]
-			if re.match('^[1-8]$',row[0]):
-				inv_stack = row[0]
-				inv_desc = 'Chassis'
+			inv_pid = subrow[2]
+			inv_sn = subrow[4]
+			if re.match('^[1-8]$',subrow[0]) or re.match('^Switch [1-8]$',subrow[0]):
+				inv_stack = subrow[0]
+				inv_desc = 'Switch chassis'
 			else:
 				inv_stack = ''
-				inv_desc = row[0]
+				inv_desc = subrow[0]
+			if re.match('^GLC|SFP.*',inv_pid):
+				inv_desc = subrow[1]
+			# Get Version number from already created list
+			for subrow1 in tempversioninfo:
+				if inv_sn = subrow1.get('Serial')
+					inv_ver = subrow1.get('Version')
 			# Create Temp Dictionary
 			tempdict = {}
 			# Append Data to Temp Dictionary
@@ -613,6 +686,9 @@ def DEF_GATHERDATA(sshdevice):
 			tempdict['Product ID'] = inv_pid
 			tempdict['Serial Number'] = inv_sn
 			tempdict['Description'] = inv_desc
+			tempdict['Stack Number'] = inv_stack
+			tempdict['Version'] = inv_ver
+			tempdict['Location'] = inv_location
 			# Append Temp Dictionary to Global List
 			fullinventorylist.append(tempdict)
 		#################################################################
@@ -640,38 +716,38 @@ def DEF_GATHERDATA(sshdevice):
 			# Get MAC Interface Count
 			macintcountb = []
 			macintcount = []
-			for row in data:
-				macintname = row[3]
+			for macintrow0 in data:
+				macintname = macintrow0[3]
 				tempdict = {}
 				# Duplicate Detection
 				dupdetect = 0
-				for temprow in macintcountb:
-					if temprow.get('Interface') == macintname:
+				for subrow2 in macintcountb:
+					if subrow2.get('Interface') == macintname:
 						dupdetect = 1
 						break
 				if dupdetect == 0:
 					tempdict['Interface'] = macintname
 					macintcountb.append(tempdict)
-			for row in macintcountb:
+			for macintrow1 in macintcountb:
 				maccount = 0
-				macint = row.get('Interface')
-				for temprow in data:
-					if temprow[3] == row.get('Interface'):
+				macint = macintrow1.get('Interface')
+				for subrow2 in data:
+					if subrow2[3] == macintrow1.get('Interface'):
 						maccount = maccount + 1
 				tempdict = {}
 				tempdict['Count'] = maccount
 				tempdict['Interface'] = macint
 				macintcount.append(tempdict)
 			# Get MAC addresses and append mac count
-			for row in data:	
+			for macintrow2 in data:	
 				# Get Hostname, MAC, VLAN, Interface, Count
 				mac_host = sshdevicehostname
-				mac_mac = row[0]
-				mac_vlan = row[2]
-				mac_int = row[3]
-				for temprow in macintcount:
-					if mac_int == temprow.get('Interface'):
-						mac_count = temprow.get('Count')
+				mac_mac = macintrow2[0]
+				mac_vlan = macintrow2[2]
+				mac_int = macintrow2[3]
+				for subrow2 in macintcount:
+					if mac_int == subrow2.get('Interface'):
+						mac_count = subrow2.get('Count')
 				# Create Temp Dictionary
 				tempdict = {}
 				# Append Data to Temp Dictionary
@@ -680,16 +756,37 @@ def DEF_GATHERDATA(sshdevice):
 				tempdict['VLAN'] = mac_vlan
 				tempdict['Interface'] = mac_int
 				tempdict['Count'] = mac_count
-				# Append Temp Dictionary to Global List
 				mactablelist.append(tempdict)
 			######################## Show Power Budget #########################
 			if powerbudget == 1:
-				#Show Power Inline
+				######################## Show Power Inline #########################
 				sshcommand = showpowerinline
 				sshresult = sshnet_connect.send_command(sshcommand)
 				if not 'invalid' in sshresult:
-						DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)				
-				#Show Stack Power
+						DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)
+						# Export Power Inline
+						data = fsmpoeporttemplate.ParseText(sshresult)
+						for subrow in data:
+							# Get Int, Admin, Oper, Power, Device, Class, Max POE
+							pow_oper = subrow[2]
+							if 'on' in pow_oper.lower():
+								pow_oper = 'Up'
+							else:
+								pow_oper = 'Down'
+							# Create Temp Dictionary
+							tempdict = {}
+							# Append Data to Temp Dictionary
+							tempdict['Hostname'] = sshdevicehostname
+							tempdict['Interface'] = subrow[0]
+							tempdict['Admin Status'] = subrow[1]
+							tempdict['Up/Down'] = pow_oper
+							tempdict['Power Usage'] = subrow[3]
+							tempdict['Device Name'] = subrow[4]
+							tempdict['Device Class'] = subrow[5]
+							tempdict['Max POE Capability'] = subrow[6]
+							# Append Temp Dictionary to Global List
+							poeinterfacelist.append(tempdict)
+				######################## Show Stack Power #########################
 				sshcommand = showpowerinline
 				sshresult = sshnet_connect.send_command(showstackpower)
 				if not 'invalid' in sshresult:
@@ -744,9 +841,9 @@ def DEF_GATHERDATA(sshdevice):
 				DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)
 			# Export ARP Data
 			data = fsmarptemplate.ParseText(sshresult)
-			for row in data:
+			for subrow in data:
 				# Get IP, MAC, and Interface
-				arp_ip = row[0]
+				arp_ip = subrow[0]
 				# Dup Detect
 				dupdetect = 0
 				for duprow in ipmactablelist:
@@ -758,10 +855,10 @@ def DEF_GATHERDATA(sshdevice):
 				if dupdetect == 1:
 					pass
 				else:
-					arp_age = row[1]
-					arp_mac = row[2]
+					arp_age = subrow[1]
+					arp_mac = subrow[2]
 					arp_host = sshdevicehostname
-					arp_int = row[4]
+					arp_int = subrow[4]
 					# Create Temp Dictionary
 					tempdict = {}
 					# Append Data to Temp Dictionary
@@ -832,17 +929,48 @@ def DEF_GATHERDATA(sshdevice):
 		#################################################################
 		########################## MISC START ###########################
 		#################################################################
-		#Show Interface Statistics
+		#
+		######################## Show Interface Statistics #########################
 		sshcommand = showinterfacestat
 		sshresult = sshnet_connect.send_command(sshcommand)
 		if not 'invalid' in sshresult:
-			DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)		
-		#Show IP Interface Brief
+			DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)
+		# Export Interface Statistics #
+		data = fsmintstattemplate.ParseText(sshresult)
+		for subrow in data:
+			# Get Interface,Description,Status,VLAN,Duplex,Speed,Type
+			# Create Temp Dictionary
+			tempdict = {}
+			# Append Data to Temp Dictionary
+			tempdict['Hostname'] = sshdevicehostname
+			tempdict['Interface'] = subrow[0]
+			tempdict['Description'] = subrow[1]
+			tempdict['Status'] = subrow[2]
+			tempdict['VLAN'] = subrow[3]
+			tempdict['Duplex'] = subrow[4]
+			tempdict['Speed'] = subrow[5]
+			tempdict['Type'] = subrow[6]
+			# Append Temp Dictionary to Global List
+			l2interfacelist.append(tempdict)
+		######################## Show IP Interface Brief #########################
 		sshcommand = showipintbr
 		sshresult = sshnet_connect.send_command(sshcommand)
 		if not 'invalid' in sshresult:
 			DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)
-		#Show IGMP Snooping
+		data = fsmipintbrtemplate.ParseText(sshresult)
+		for subrow in data:
+			# Get Interface,Description,Status,VLAN,Duplex,Speed,Type
+			# Create Temp Dictionary
+			tempdict = {}
+			# Append Data to Temp Dictionary
+			tempdict['Hostname'] = sshdevicehostname
+			tempdict['Interface'] = subrow[0]
+			tempdict['IP Address'] = subrow[1]
+			tempdict['Status'] = subrow[2]
+			tempdict['Line Protocol'] = subrow[3]
+			# Append Temp Dictionary to Global List
+			l3interfacelist.append(tempdict)
+		######################## Show IGMP Snooping #########################
 		sshcommand = showigmpsnoop
 		sshresult = sshnet_connect.send_command(sshcommand)
 		if not 'invalid' in sshresult:
@@ -905,7 +1033,7 @@ def DEF_HEALTHCHECK(sshdevice):
 		urllib.urlretrieve(fsmshowinturl, fsmtemplatename)
 	fsmtemplatenamefile = open(fsmtemplatename)
 	fsminttemplate = textfsm.TextFSM(fsmtemplatenamefile)
-	tempfilelist.append(fsmtemplatenamefile)
+	tempfilelist.append(fsmtemplatename)
 	fsmtemplatenamefile.close()
 	# FSM Show Temperature
 	if "cisco_ios" in sshdevicetype:
@@ -919,7 +1047,7 @@ def DEF_HEALTHCHECK(sshdevice):
 		urllib.urlretrieve(fsmshowtempurl, fsmtemplatename)
 	fsmtemplatenamefile = open(fsmtemplatename)
 	fsmtemptemplate = textfsm.TextFSM(fsmtemplatenamefile)
-	tempfilelist.append(fsmtemplatenamefile)
+	tempfilelist.append(fsmtemplatename)
 	fsmtemplatenamefile.close()
 	#Start Connection
 	try:
@@ -955,17 +1083,18 @@ def DEF_HEALTHCHECK(sshdevice):
 		sshresult = sshnet_connect.send_command(sshcommand)
 		hcshowint = fsminttemplate.ParseText(sshresult)
 		#Parse through each interface looking for issues
+		healthcheckcsv = []
 		for hcshowintsingle in hcshowint:
 			hcinterfacename = hcshowintsingle[0].encode('utf-8')
 			if not 'notconnect' in hcshowintsingle[2]:
 				# Look for duplexing issues
 				if 'Half-duplex' in hcshowintsingle[6]:
 					hcerror = 'Duplex Mismatch'
-					hcdescription = '(Interface is showing as half-duplex. If this is by design please ignore.'
+					hcdescription = hcinterfacename + ' is showing as half-duplex. If this is by design please ignore.'
 					healthcheckcsv.append ((sshdevicehostname + ',' + hcerror + ',' + hcdescription))
 				if '10Mb/s' in hcshowintsingle[7]:
 					hcerror = 'Duplex Mismatch'
-					hcdescription = 'Interface is showing as 10Mb/s. If this is by design please ignore.'
+					hcdescription = hcinterfacename + ' is showing as 10Mb/s. If this is by design please ignore.'
 					healthcheckcsv.append ((sshdevicehostname + ',' + hcerror + ',' + hcdescription))
 				# Look for interface counter errors
 				# Input Errors
@@ -977,7 +1106,7 @@ def DEF_HEALTHCHECK(sshdevice):
 					hcerror = 'Input Errors'
 					hcinterfacecounter = hcshowintsingle[8]
 					hcinterfacecounter = hcinterfacecounter.encode('utf-8')
-					hcdescription = 'Interface is showing ' + hcinterfacecounter + ' input errors. Usually indicative of a bad link (cabling and/or optic failure).'
+					hcdescription = hcinterfacename + ' is showing ' + hcinterfacecounter + ' input errors. Usually indicative of a bad link (cabling and/or optic failure).'
 					healthcheckcsv.append ((sshdevicehostname + ',' + hcerror + ',' + hcdescription))
 				# CRC errors
 				hcshowintsingleint = hcshowintsingle[9]
@@ -989,7 +1118,7 @@ def DEF_HEALTHCHECK(sshdevice):
 					hcinterfacecounter = hcshowintsingle[9]
 					hcinterfacecounter = hcinterfacecounter
 					hcinterfacecounter = hcinterfacecounter.encode('utf-8')
-					hcdescription = 'Interface is showing ' + hcinterfacecounter + ' CRC errors. Usually indicative of incorrect duplexing settings or a bad link (cabling and/or optic failure).'
+					hcdescription = hcinterfacename + ' is showing ' + hcinterfacecounter + ' CRC errors. Usually indicative of incorrect duplexing settings or a bad link (cabling and/or optic failure).'
 					healthcheckcsv.append ((sshdevicehostname + ',' + hcerror + ',' + hcdescription))
 				# Output errors
 				hcshowintsingleint = hcshowintsingle[10]
@@ -1000,7 +1129,7 @@ def DEF_HEALTHCHECK(sshdevice):
 					hcerror = 'Saturated Link'
 					hcinterfacecounter = hcshowintsingle[10]
 					hcinterfacecounter = hcinterfacecounter.encode('utf-8')
-					hcdescription = 'Interface is showing ' + hcinterfacecounter + ' output errors. This is usually indicative of a saturated interface.  '
+					hcdescription = hcinterfacename + ' is showing ' + hcinterfacecounter + ' output errors. This is usually indicative of a saturated interface.  '
 					healthcheckcsv.append ((sshdevicehostname + ',' + hcerror + ',' + hcdescription))
 				# Collisions
 				hcshowintsingleint = hcshowintsingle[11]
@@ -1011,7 +1140,7 @@ def DEF_HEALTHCHECK(sshdevice):
 					hcerror = 'Shared Medium'
 					hcinterfacecounter = hcshowintsingle[11]
 					hcinterfacecounter = hcinterfacecounter.encode('utf-8')
-					hcdescription = 'Interface is showing ' + hcinterfacecounter + ' collisions.  '
+					hcdescription = hcinterfacename + ' is showing ' + hcinterfacecounter + ' collisions.  '
 					healthcheckcsv.append ((sshdevicehostname + ',' + hcerror + ',' + hcdescription))		
 				# Interface resets
 				hcshowintsingleint = hcshowintsingle[12]
@@ -1022,7 +1151,7 @@ def DEF_HEALTHCHECK(sshdevice):
 					hcerror = 'Interface Reset Count'
 					hcinterfacecounter = hcshowintsingle[12]
 					hcinterfacecounter = hcinterfacecounter.encode('utf-8')
-					hcdescription = 'Interface is showing ' + hcinterfacecounter + ' interface resets. '
+					hcdescription = hcinterfacename + ' is showing ' + hcinterfacecounter + ' interface resets. '
 					healthcheckcsv.append ((sshdevicehostname + ',' + hcerror + ',' + hcdescription))
 		#Show Temperature
 		try:
@@ -1041,6 +1170,18 @@ def DEF_HEALTHCHECK(sshdevice):
 			pass
 		# Exit SSH
 		sshnet_connect.disconnect()
+		# Parse list into dictionary/list
+		saveresultslistsplit = []
+		for saveresultsrow in healthcheckcsv:
+			saveresultslistsplit.append(saveresultsrow.strip().split(','))
+		saveresultslistsplit = [saveresultslistsplit[i:i+3] for i in range(0,len(saveresultslistsplit),3)]
+		for saveresultsplitrow in saveresultslistsplit:
+			for saveresultssplitrow2 in saveresultsplitrow:
+				tempdict = {}
+				tempdict['Hostname'] = saveresultssplitrow2[:1][0]
+				tempdict['Error'] = saveresultssplitrow2[1:][0]
+				tempdict['Description'] = saveresultssplitrow2[2:][0]
+				healthchecklist.append(tempdict)
 	except IndexError:
 		print 'Could not connect to device ' + sshdeviceip
 		try:
@@ -1312,30 +1453,6 @@ if __name__ == "__main__":
 			mnetcatfilew.close()
 			mnetcatfile.close()
 			mnetcatfile = open (mnetcat, 'rb')
-		if not mnetcatdata.find('\x01') == 1:	
-			mnetcatfilew = open(mnetcat, 'wb')
-			mnetcatfilew.write(mnetcatdata.replace('\x01', ''))
-			mnetcatfilew.close()
-			mnetcatfile.close()
-			mnetcatfile = open (mnetcat, 'rb')
-		if not mnetcatdata.find('\x02') == 1:	
-			mnetcatfilew = open(mnetcat, 'wb')
-			mnetcatfilew.write(mnetcatdata.replace('\x02', ''))
-			mnetcatfilew.close()
-			mnetcatfile.close()
-			mnetcatfile = open (mnetcat, 'rb')	
-		if not mnetcatdata.find('\x03') == 1:	
-			mnetcatfilew = open(mnetcat, 'wb')
-			mnetcatfilew.write(mnetcatdata.replace('\x03', ''))
-			mnetcatfilew.close()
-			mnetcatfile.close()
-			mnetcatfile = open (mnetcat, 'rb')
-		if not mnetcatdata.find('\x08') == 1:	
-			mnetcatfilew = open(mnetcat, 'wb')
-			mnetcatfilew.write(mnetcatdata.replace('\x08', ''))
-			mnetcatfilew.close()
-			mnetcatfile.close()
-			mnetcatfile = open (mnetcat, 'rb')
 		mnetcatalog = csv.reader(mnetcatfile, delimiter=',')
 		for row in mnetcatalog:
 			try:
@@ -1372,6 +1489,7 @@ if __name__ == "__main__":
 						sshdevices.append(snmpdiscoverylist)
 			except:
 				pass
+		mnetcatfile.close()
 		# SSH Section
 		if devicediscoverysshv == 1:
 			print 'Starting SSH CDP Discovery'
@@ -1402,69 +1520,229 @@ if __name__ == "__main__":
 ################################ EXPORTING REPORTS ################################
 print 'Exporting Informational Reports'
 ### Full Inventory ###
-wb = Workbook()
-dest_filename = 'Full-Inventory.xlsx'
-dest_path = exportlocation + dest_filename
-ws1 = wb.active
-ws1.title = "Full Inventory"
-for row in fullinventorylist:
-	ws1.append(row)
-wb.save(filename = dest_path)
+try:
+	wb = Workbook()
+	dest_filename = 'Full-Inventory.xlsx'
+	dest_path = exportlocation + '\\' + dest_filename
+	ws1 = wb.active
+	ws1.title = "Device Inventory"
+	ws1.append(['Hostname','Product ID','Serial Number','Stack Number','Manufacture Date','Version','Description'])
+	startrow = 2
+	for row in fullinventorylist:
+		if 'chassis' in row.get('Description').lower():
+			# Attempt to find the age of the device
+			try:
+				age_base = 1996
+				age_year = int(row.get('Serial Number')[3:5])
+				age_week = (row.get('Serial Number')[5:7])
+				age_year_manufactured = age_base + age_year
+				age_manufactured = datetime.datetime.strptime(str(age_year_manufactured) + '-W' + age_week.encode('utf-8') + '-0', '%Y-W%W-%w')
+				age_manufactured = '{:%B %d, %Y}'.format(age_manufactured)
+			except:
+				age_manufactured = ''
+			# Add to workbook
+			ws1['A' + str(startrow)] = row.get('Hostname').encode('utf-8')
+			ws1['B' + str(startrow)] = row.get('Product ID')
+			ws1['C' + str(startrow)] = row.get('Serial Number')
+			ws1['D' + str(startrow)] = row.get('Stack Number')
+			ws1['E' + str(startrow)] = age_manufactured
+			ws1['F' + str(startrow)] = row.get('Version')
+			ws1['G' + str(startrow)] = row.get('Description')
+			startrow = startrow + 1
+	ws2 = wb.create_sheet(title="Module Inventory")
+	ws2.append(['Hostname','Product ID','Serial Number','Description'])
+	startrow = 2
+	for row in fullinventorylist:
+		if not 'chassis' in row.get('Description').lower():
+			ws2['A' + str(startrow)] = row.get('Hostname').encode('utf-8')
+			ws2['B' + str(startrow)] = row.get('Product ID')
+			ws2['C' + str(startrow)] = row.get('Serial Number')
+			ws2['D' + str(startrow)] = row.get('Description')
+			startrow = startrow + 1
+	wb.save(filename = dest_path)
+	print 'Successfully created Full Inventory Report'
+except Exception as e:
+	print 'Error creating Full Inventory Report. Error is ' + str(e)
 #### MAC and ARP Report ###
-wb = Workbook()
-dest_filename = 'ARP-MAC-Report.xlsx'
-dest_path = exportlocation + dest_filename
-ws1 = wb.active
-ws1.title = "ARP Report"
-# Create ARP report by looking for closest hop interface
-for row in ipmactablelist:
-	tempdict = {}
-	tempdict['IP Address'] = row.get('IP Address')
-	tempdict['MAC'] = row.get('MAC')
-	if '-' in row.get('Age'):
-		tempdict['Source Device'] = row.get('Hostname')
-		tempdict['Interface'] = row.get('Interface')
-		tempdict['MAC Count on Interface'] = 1
-	else:
-		# Find the lowest count interface in the list that matches the mac address
-		maccount = 100000
-		for temprow in mactablelist:
-			if temprow.get('Count') < maccount:
-				maccount = temprow.get('Count')
-				macint = temprow.get('Interface')
-				machost = temprow.get('Hostname')
-		tempdict['Source Device'] = temprow.get('Hostname')
-		tempdict['Interface'] = temprow.get('Interface')
-		tempdict['MAC Count on Interface'] = maccount
-	iparptablelist.append(tempdict)
-# Create the actual ARP report
-for row in iparptablelist:
-	wb1.append(row)
-# Change worksheet
-ws2 = wb.create_sheet(title="MAC")
-for row in mactablelist:
-	ws2.append(row)
-# Save Workbook
-wb.save(filename = dest_path)
+try:
+	wb = Workbook()
+	dest_filename = 'ARP-MAC-Report.xlsx'
+	dest_path = exportlocation + '\\' + dest_filename
+	ws1 = wb.active
+	ws1.title = "ARP Report"
+	ws1.append(['IP Address','MAC','Manufacturer','Source Device','Inteface','MAC Count on Interface'])
+	# Create ARP report by looking for closest hop interface
+	skiparpreport = 0
+	for row in ipmactablelist:
+		tempdict = {}
+		tempdict['IP Address'] = row.get('IP Address')
+		tempdict['MAC'] = row.get('MAC')
+		# Get a vendor mac address and add to the table
+		try:
+			r = requests.get(maclookupurl % (row.get('MAC')))
+			maccompany = r.json().get('result').get('company')
+			if maccompany == '':
+				maccompany = 'Unknown'
+		except:
+			maccompany = 'Unknown'
+		tempdict['MAC Manufacturer'] = maccompany
+		if '-' in row.get('Age'):
+			tempdict['Source Device'] = row.get('Hostname')
+			tempdict['Interface'] = row.get('Interface')
+			tempdict['MAC Count on Interface'] = 1
+		else:
+			# Find the lowest count interface in the list that matches the mac address
+			maccount = 100000
+			for temprow in mactablelist:
+				if temprow.get('Count') < maccount and temprow.get('MAC') == row.get('MAC'):
+					maccount = temprow.get('Count')
+					macint = temprow.get('Interface')
+					machost = temprow.get('Hostname')
+					if maccount == 100000:
+						print 1
+			# Bug Fix - Somehow some interfaces were being missed (showing 100000 mac), finding interface match from earlier and matching on that
+			if maccount == 100000:
+				for temprow in mactablelist:
+					if macint == temprow.get('Interface'):
+						maccount = temprow.get('Count')
+			tempdict['Source Device'] = machost
+			tempdict['Interface'] = macint
+			tempdict['MAC Count on Interface'] = maccount
+		iparptablelist.append(tempdict)
+	# Create the actual ARP report
+	startrow = 2
+	for row in iparptablelist:
+		ws1['A' + str(startrow)] = row.get('IP Address')
+		ws1['B' + str(startrow)] = row.get('MAC')
+		ws1['C' + str(startrow)] = row.get('MAC Manufacturer')
+		ws1['D' + str(startrow)] = row.get('Source Device')
+		ws1['E' + str(startrow)] = row.get('Interface')
+		ws1['F' + str(startrow)] = row.get('MAC Count on Interface')
+		startrow = startrow + 1
+	# Change worksheet
+	ws2 = wb.create_sheet(title="MAC")
+	ws2.append(['Hostname','MAC','Manufacturer','VLAN','Interface'])
+	startrow = 2
+	for row in mactablelist:
+		# Get Manufacturer of MAC
+		try:
+			r = requests.get(maclookupurl % (row.get('MAC')))
+			maccompany = r.json().get('result').get('company')
+			if maccompany == '':
+				maccompany = 'Unknown'
+		except:
+			maccompany = 'Unknown'
+		# Append to Workbook
+		ws2['A' + str(startrow)] = row.get('Hostname')
+		ws2['B' + str(startrow)] = row.get('MAC')
+		ws2['C' + str(startrow)] = maccompany
+		ws2['D' + str(startrow)] = row.get('VLAN')
+		ws2['E' + str(startrow)] = row.get('Interface')
+		startrow = startrow + 1
+	# Save workbook
+	wb.save(filename = dest_path)
+	print 'Successfully created ARP/MAC Report'
+except Exception as e:
+	print 'Could not save the ARP/MAC data to XLSX. Error is ' + str(e)
+### Interface Report ###
+'''
+try:
+	wb = Workbook()
+	dest_filename = 'Interface-Report.xlsx'
+	dest_path = exportlocation + '\\' + dest_filename
+	ws1 = wb.active
+	ws1.title = "Interface Overview"
+	ws1.append(['Hostname','100Mb','1Gb','10gb','40gb','100gb','POE'])
+	startrow = 2
+	for row in l2interfaces:
+		# Get Hostname and populate
+		ws1['A' + str(startrow)] = row.get('Hostname').encode('utf-8')
+		ws1['B' + str(startrow)] = startrow
+		ws1['C' + str(startrow)] = startrow
+		ws1['D' + str(startrow)] = startrow
+		ws1['E' + str(startrow)] = startrow
+		ws1['F' + str(startrow)] = startrow
+		ws1['G' + str(startrow)] = startrow
+		startrow = startrow + 1
+	ws2 = wb.create_sheet(title="L2 Interfaces")
+	ws2.append(['Hostname','Product ID','Serial Number','Description'])
+	startrow = 2
+	for row in fullinventorylist:
+		if not 'chassis' in row.get('Description').lower():
+			ws2['A' + str(startrow)] = row.get('Hostname').encode('utf-8')
+			ws2['B' + str(startrow)] = row.get('Product ID')
+			ws2['C' + str(startrow)] = row.get('Serial Number')
+			ws2['D' + str(startrow)] = row.get('Description')
+			startrow = startrow + 1
+	ws3 = wb.create_sheet(title="L3 Interfaces")
+	ws3.append(['Hostname','Product ID','Serial Number','Description'])
+	startrow = 2
+	for row in fullinventorylist:
+		if not 'chassis' in row.get('Description').lower():
+			ws3['A' + str(startrow)] = row.get('Hostname').encode('utf-8')
+			ws3['B' + str(startrow)] = row.get('Product ID')
+			ws3['C' + str(startrow)] = row.get('Serial Number')
+			ws3['D' + str(startrow)] = row.get('Description')
+			startrow = startrow + 1
+	wb.save(filename = dest_path)
+	print 'Successfully created Interface Report'
+except Exception as e:
+	print 'Error creating Interface Report. Error is ' + str(e)	
+### POE Report ###
+try:
+	wb = Workbook()
+	dest_filename = 'POE-Report.xlsx'
+	dest_path = exportlocation + '\\' + dest_filename
+	ws1 = wb.active
+	ws1.title = "POE Interfaces"
+	ws1.append(['Hostname','Product ID','Serial Number','Stack Number','Manufacture Date','Version','Description'])
+	startrow = 2
+	for row in fullinventorylist:
+		if 'chassis' in row.get('Description').lower():
+			# Attempt to find the age of the device
+			try:
+				age_base = 1996
+				age_year = int(row.get('Serial Number')[3:5])
+				age_week = (row.get('Serial Number')[5:7])
+				age_year_manufactured = age_base + age_year
+				age_manufactured = datetime.datetime.strptime(str(age_year_manufactured) + '-W' + age_week.encode('utf-8') + '-0', '%Y-W%W-%w')
+				age_manufactured = '{:%B %d, %Y}'.format(age_manufactured)
+			except:
+				age_manufactured = ''
+			# Add to workbook
+			ws1['A' + str(startrow)] = row.get('Hostname').encode('utf-8')
+			ws1['B' + str(startrow)] = row.get('Product ID')
+			ws1['C' + str(startrow)] = row.get('Serial Number')
+			ws1['D' + str(startrow)] = row.get('Stack Number')
+			ws1['E' + str(startrow)] = age_manufactured
+			ws1['F' + str(startrow)] = row.get('Version')
+			ws1['G' + str(startrow)] = row.get('Description')
+			startrow = startrow + 1
+	wb.save(filename = dest_path)
+	print 'Successfully created POE Report'
+except Exception as e:
+	print 'Error creating POE Report. Error is ' + str(e)	
+'''	
+	
+	
 ### Health Check ###
 try:
 	if healthcheckv == 1:
 		print 'Exporting Health Reports'
-		savepath = exportlocation + '\\HealthCheck.csv'
-		with open(savepath, 'wb') as csvfile:
-			fieldnames = ['Hostname', 'Error', 'Description']
-			writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-			writer.writeheader()
-			saveresultslistsplit = []
-			for saveresultsrow in healthcheckcsv:
-				saveresultslistsplit.append(saveresultsrow.strip().split(','))
-			saveresultslistsplit = [saveresultslistsplit[i:i+3] for i in range(0,len(saveresultslistsplit),3)]
-			for saveresultsplitrow in saveresultslistsplit:
-				for saveresultssplitrow2 in saveresultsplitrow:
-					saveresultsplitrow1 = saveresultssplitrow2[:1][0]
-					saveresultsplitrow2 = saveresultssplitrow2[1:][0]
-					saveresultsplitrow3 = saveresultssplitrow2[2:][0]
-					writer.writerow({'Hostname': saveresultsplitrow1, 'Error': saveresultsplitrow2, 'Description': saveresultsplitrow3})
+		wb = Workbook()
+		dest_filename = 'Health-Check-Report.xlsx'
+		dest_path = exportlocation + '\\' + dest_filename
+		ws1 = wb.active
+		ws1.title = "Health Check"
+		ws1.append(['Hostname','Error','Description'])
+		startrow = 2
+		for row in healthchecklist:
+			ws1['A' + str(startrow)] = row.get('Hostname')
+			ws1['B' + str(startrow)] = row.get('Error')
+			ws1['C' + str(startrow)] = row.get('Description')
+			startrow = startrow + 1		
+		wb.save(filename = dest_path)
+		print 'Successfully created Health Check Report'
 except Exception as e:
 	print 'Could not save health check data to CSV. Error is ' + str(e)
 	

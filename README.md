@@ -51,5 +51,5 @@ This project is licensed under the GNU - see the [LICENSE.md](LICENSE.md) file f
 ## Acknowledgments
 
 * Thanks to HBS for giving me a reason to write this.
-* mnetsuite (fantastic package written by Michael Laforest (https://github.com/MJL85).
+* mnetsuite (fantastic package written by Michael Laforest (https://github.com/MJL85)).
 * Netmiko

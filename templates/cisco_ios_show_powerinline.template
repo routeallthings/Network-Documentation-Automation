@@ -1,0 +1,10 @@
+Value Required INT (\S+)
+Value Required ADMIN (\S+)
+Value Required OPER (off|on)
+Value Required POW (\d+.\d+)
+Value Required DEVICE (\S+)
+Value Required CLASS (1|2|3|4|5|n/a)
+Value Required MAXPOE (\d+.\d+)
+
+Start
+  ^${INT}\s+${ADMIN}\s+${OPER}\s+${POW}\s+${DEVICE}\s+${CLASS}\s+${MAXPOE} -> Record
