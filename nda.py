@@ -25,6 +25,7 @@ import sys
 import json
 import logging
 import datetime
+from decimal import *
 
 # FIXES
 
@@ -244,6 +245,7 @@ poeinterfacelist = []
 
 # URLs to use
 maclookupurl = 'http://macvendors.co/api/%s'
+maclookupdburl = "https://linuxnet.ca/ieee/oui.txt"
 
 '''Global Variable Questions'''
 print ''
@@ -586,6 +588,7 @@ def DEF_GATHERDATA(sshdevice):
 		fsmtemplatenamefile = open(fsmtemplatename)
 		fsmipintbrtemplate = textfsm.TextFSM(fsmtemplatenamefile)
 		tempfilelist.append(fsmtemplatenamefile)
+		print fsmtemplatenamefile
 		fsmtemplatenamefile.close()
 		#################################################################
 		##################### DOWNLOAD TEMPLATES END ####################
@@ -637,12 +640,12 @@ def DEF_GATHERDATA(sshdevice):
 		for subrow in data:
 			# Get Version Number and attach to temporary dictionary
 			ver_ver = subrow[0]
-			ver_ser = subrow[5]
+			ver_host = subrow[2]
 			# Create Temp Dictionary
 			tempdict = {}
 			# Append Data to Temp Dictionary
 			tempdict['Version'] = ver_ver
-			tempdict['Serial'] = ver_ser
+			tempdict['Hostname'] = ver_host
 			# Append Temp Dictionary to Global List
 			tempversioninfo.append(tempdict)
 		######################## Show Location #########################
@@ -677,7 +680,7 @@ def DEF_GATHERDATA(sshdevice):
 				inv_desc = subrow[1]
 			# Get Version number from already created list
 			for subrow1 in tempversioninfo:
-				if inv_sn = subrow1.get('Serial')
+				if sshdevicehostname == subrow1.get('Hostname'):
 					inv_ver = subrow1.get('Version')
 			# Create Temp Dictionary
 			tempdict = {}
@@ -1541,7 +1544,7 @@ try:
 			except:
 				age_manufactured = ''
 			# Add to workbook
-			ws1['A' + str(startrow)] = row.get('Hostname').encode('utf-8')
+			ws1['A' + str(startrow)] = row.get('Hostname')
 			ws1['B' + str(startrow)] = row.get('Product ID')
 			ws1['C' + str(startrow)] = row.get('Serial Number')
 			ws1['D' + str(startrow)] = row.get('Stack Number')
@@ -1554,7 +1557,7 @@ try:
 	startrow = 2
 	for row in fullinventorylist:
 		if not 'chassis' in row.get('Description').lower():
-			ws2['A' + str(startrow)] = row.get('Hostname').encode('utf-8')
+			ws2['A' + str(startrow)] = row.get('Hostname')
 			ws2['B' + str(startrow)] = row.get('Product ID')
 			ws2['C' + str(startrow)] = row.get('Serial Number')
 			ws2['D' + str(startrow)] = row.get('Description')
@@ -1573,18 +1576,35 @@ try:
 	ws1.append(['IP Address','MAC','Manufacturer','Source Device','Inteface','MAC Count on Interface'])
 	# Create ARP report by looking for closest hop interface
 	skiparpreport = 0
+	# Preload MAC DB
+	try:
+		maclookupfilename = 'oui.txt'
+		tempfilelist.append(maclookupfilename)
+		if not os.path.isfile(maclookupfilename):
+			urllib.urlretrieve(maclookupdburl, maclookupfilename)
+		maclookupdbo = open(maclookupfilename)
+		maclookupdb = maclookupdbo.readlines()
+		maclookupdbo.close()
+		skipmac = 0
+	except Exception as e:
+		skipmac = 1
+		print 'Could not load MAC database. Error is ' + str(e)
+	# Start processing data
 	for row in ipmactablelist:
 		tempdict = {}
 		tempdict['IP Address'] = row.get('IP Address')
 		tempdict['MAC'] = row.get('MAC')
+		mac_company_mac = (row.get('MAC')[0:8])
 		# Get a vendor mac address and add to the table
-		try:
-			r = requests.get(maclookupurl % (row.get('MAC')))
-			maccompany = r.json().get('result').get('company')
-			if maccompany == '':
+		if skipmac == 0:
+			try:
+				for line in maclookupdb:
+					if line.startswith(mac_company_mac):
+						maccompany = (re.search(r'^(([A-Z0-9]{2}[-]){2}[A-Z0-9]{2}.*\(hex\)\s+)(.*)',line)).group(3)
+					if maccompany == '':
+						maccompany = 'Unknown'
+			except:
 				maccompany = 'Unknown'
-		except:
-			maccompany = 'Unknown'
 		tempdict['MAC Manufacturer'] = maccompany
 		if '-' in row.get('Age'):
 			tempdict['Source Device'] = row.get('Hostname')
@@ -1594,17 +1614,17 @@ try:
 			# Find the lowest count interface in the list that matches the mac address
 			maccount = 100000
 			for temprow in mactablelist:
-				if temprow.get('Count') < maccount and temprow.get('MAC') == row.get('MAC'):
+				if temprow.get('Count') <= maccount and temprow.get('MAC') == row.get('MAC'):
 					maccount = temprow.get('Count')
 					macint = temprow.get('Interface')
 					machost = temprow.get('Hostname')
-					if maccount == 100000:
-						print 1
 			# Bug Fix - Somehow some interfaces were being missed (showing 100000 mac), finding interface match from earlier and matching on that
+			'''
 			if maccount == 100000:
 				for temprow in mactablelist:
 					if macint == temprow.get('Interface'):
 						maccount = temprow.get('Count')
+			'''
 			tempdict['Source Device'] = machost
 			tempdict['Interface'] = macint
 			tempdict['MAC Count on Interface'] = maccount
@@ -1625,13 +1645,15 @@ try:
 	startrow = 2
 	for row in mactablelist:
 		# Get Manufacturer of MAC
-		try:
-			r = requests.get(maclookupurl % (row.get('MAC')))
-			maccompany = r.json().get('result').get('company')
-			if maccompany == '':
+		if skipmac == 0:
+			try:
+				for line in maclookupdb:
+					if line.startswith(mac_company_mac):
+						maccompany = (re.search(r'^(([A-Z0-9]{2}[-]){2}[A-Z0-9]{2}.*\(hex\)\s+)(.*)',line)).group(3)
+					if maccompany == '':
+						maccompany = 'Unknown'
+			except:
 				maccompany = 'Unknown'
-		except:
-			maccompany = 'Unknown'
 		# Append to Workbook
 		ws2['A' + str(startrow)] = row.get('Hostname')
 		ws2['B' + str(startrow)] = row.get('MAC')
@@ -1645,7 +1667,6 @@ try:
 except Exception as e:
 	print 'Could not save the ARP/MAC data to XLSX. Error is ' + str(e)
 ### Interface Report ###
-'''
 try:
 	wb = Workbook()
 	dest_filename = 'Interface-Report.xlsx'
@@ -1654,36 +1675,83 @@ try:
 	ws1.title = "Interface Overview"
 	ws1.append(['Hostname','100Mb','1Gb','10gb','40gb','100gb','POE'])
 	startrow = 2
-	for row in l2interfaces:
+	# Populate Device Names
+	l2devicenames = []
+	for row in l2interfacelist:
+		dupdetect = 0	
+		for device in l2devicenames:
+			if row.get('Hostname') == device:
+				dupdetect = 1
+		if dupdetect == 0:
+			l2devicenames.append(row.get('Hostname'))
+	# Count Interfaces
+	for row in l2devicenames:
+		int_hostname = row
+		faint = 0
+		geint = 0
+		tengeint = 0
+		fortygeint = 0
+		hundredgeint = 0
+		poeint = 0
+		for subrow in l2interfacelist:
+			if '10/100BaseTX' in subrow.get('Type') and int_hostname == subrow.get('Hostname'):
+				faint = faint + 1
+			if '10/100/1000BaseTX' in subrow.get('Type') and int_hostname == subrow.get('Hostname'):
+				geint = geint + 1
+			if '10/100/10000BaseTX' in subrow.get('Type') and int_hostname == subrow.get('Hostname'):
+				tengeint = tengeint + 1
+			if '10/40GB' in subrow.get('Type') and int_hostname == subrow.get('Hostname'):
+				fortygeint = fortygeint + 1
+			if '10/25/50/100' in subrow.get('Type') and int_hostname == subrow.get('Hostname'):
+				hundredgeint = hundredgeint + 1
+			if '10/40/100' in subrow.get('Type') and int_hostname == subrow.get('Hostname'):
+				hundredgeint = hundredgeint + 1
+			for subrow1 in poeinterfacelist:
+				if subrow.get('Interface') == subrow1.get('Interface') and Decimal(subrow1.get('Power Usage')) > 0 and subrow.get('Hostname') == subrow1.get('Hostname'):
+					poeint = poeint + 1
 		# Get Hostname and populate
-		ws1['A' + str(startrow)] = row.get('Hostname').encode('utf-8')
-		ws1['B' + str(startrow)] = startrow
-		ws1['C' + str(startrow)] = startrow
-		ws1['D' + str(startrow)] = startrow
-		ws1['E' + str(startrow)] = startrow
-		ws1['F' + str(startrow)] = startrow
-		ws1['G' + str(startrow)] = startrow
+		ws1['A' + str(startrow)] = int_hostname
+		ws1['B' + str(startrow)] = faint
+		ws1['C' + str(startrow)] = geint
+		ws1['D' + str(startrow)] = tengeint
+		ws1['E' + str(startrow)] = fortygeint
+		ws1['F' + str(startrow)] = hundredgeint
+		ws1['G' + str(startrow)] = poeint
 		startrow = startrow + 1
-	ws2 = wb.create_sheet(title="L2 Interfaces")
-	ws2.append(['Hostname','Product ID','Serial Number','Description'])
-	startrow = 2
-	for row in fullinventorylist:
-		if not 'chassis' in row.get('Description').lower():
-			ws2['A' + str(startrow)] = row.get('Hostname').encode('utf-8')
-			ws2['B' + str(startrow)] = row.get('Product ID')
-			ws2['C' + str(startrow)] = row.get('Serial Number')
-			ws2['D' + str(startrow)] = row.get('Description')
+	try:
+		ws2 = wb.create_sheet(title="L2 Interfaces")
+		ws2.append(['Hostname','Interface','Type','Status','Speed','Duplex','VLAN','POE'])
+		startrow = 2
+		for row in l2interfacelist:
+			# Get POE interfaces and combine
+			for subrow in poeinterfacelist:
+				if row.get('Interface') == subrow.get('Interface') and Decimal(subrow.get('Power Usage')) > 0 and row.get('Hostname') == subrow.get('Hostname'):
+					poeint = 'Yes'
+				else:
+					poeint = 'No'
+			ws2['A' + str(startrow)] = row.get('Hostname')
+			ws2['B' + str(startrow)] = row.get('Interface')
+			ws2['C' + str(startrow)] = row.get('Type')
+			ws2['D' + str(startrow)] = row.get('Status')
+			ws2['E' + str(startrow)] = row.get('Speed')
+			ws2['F' + str(startrow)] = row.get('Duplex')
+			ws2['G' + str(startrow)] = row.get('VLAN').encode('utf-8')
+			ws2['H' + str(startrow)] = poeint
 			startrow = startrow + 1
-	ws3 = wb.create_sheet(title="L3 Interfaces")
-	ws3.append(['Hostname','Product ID','Serial Number','Description'])
-	startrow = 2
-	for row in fullinventorylist:
-		if not 'chassis' in row.get('Description').lower():
-			ws3['A' + str(startrow)] = row.get('Hostname').encode('utf-8')
-			ws3['B' + str(startrow)] = row.get('Product ID')
-			ws3['C' + str(startrow)] = row.get('Serial Number')
-			ws3['D' + str(startrow)] = row.get('Description')
+	except Exception as e:
+		print 'Error creating L2 Interface Report. Error is ' + str(e)	
+	try:
+		ws3 = wb.create_sheet(title="L3 Interfaces")
+		ws3.append(['Hostname','Interface','IP Address'])
+		startrow = 2
+		for row in l3interfacelist:
+			ws3['A' + str(startrow)] = row.get('Hostname')
+			ws3['B' + str(startrow)] = row.get('Interface')
+			ws3['C' + str(startrow)] = row.get('IP Address')
 			startrow = startrow + 1
+			ws3 = wb.create_sheet(title="L3 Interfaces")
+	except Exception as e:
+		print 'Error creating L3 Interface Report. Error is ' + str(e)	
 	wb.save(filename = dest_path)
 	print 'Successfully created Interface Report'
 except Exception as e:
@@ -1695,34 +1763,24 @@ try:
 	dest_path = exportlocation + '\\' + dest_filename
 	ws1 = wb.active
 	ws1.title = "POE Interfaces"
-	ws1.append(['Hostname','Product ID','Serial Number','Stack Number','Manufacture Date','Version','Description'])
+	ws1.append(['Hostname','Interface','Admin Status','Operational Status','Power Usage','Device Name','Device Class','Max POE Capability'])
 	startrow = 2
-	for row in fullinventorylist:
-		if 'chassis' in row.get('Description').lower():
-			# Attempt to find the age of the device
-			try:
-				age_base = 1996
-				age_year = int(row.get('Serial Number')[3:5])
-				age_week = (row.get('Serial Number')[5:7])
-				age_year_manufactured = age_base + age_year
-				age_manufactured = datetime.datetime.strptime(str(age_year_manufactured) + '-W' + age_week.encode('utf-8') + '-0', '%Y-W%W-%w')
-				age_manufactured = '{:%B %d, %Y}'.format(age_manufactured)
-			except:
-				age_manufactured = ''
+	for row in poeinterfacelist:
+		if not row.get('Power Usage') == '0.0':
 			# Add to workbook
-			ws1['A' + str(startrow)] = row.get('Hostname').encode('utf-8')
-			ws1['B' + str(startrow)] = row.get('Product ID')
-			ws1['C' + str(startrow)] = row.get('Serial Number')
-			ws1['D' + str(startrow)] = row.get('Stack Number')
-			ws1['E' + str(startrow)] = age_manufactured
-			ws1['F' + str(startrow)] = row.get('Version')
-			ws1['G' + str(startrow)] = row.get('Description')
+			ws1['A' + str(startrow)] = row.get('Hostname')
+			ws1['B' + str(startrow)] = row.get('Interface')
+			ws1['C' + str(startrow)] = row.get('Admin Status')
+			ws1['D' + str(startrow)] = row.get('Up/Down')
+			ws1['E' + str(startrow)] = row.get('Power Usage')
+			ws1['F' + str(startrow)] = row.get('Device Name')
+			ws1['G' + str(startrow)] = row.get('Device Class')
+			ws1['H' + str(startrow)] = row.get('Max POE Capability')
 			startrow = startrow + 1
 	wb.save(filename = dest_path)
 	print 'Successfully created POE Report'
 except Exception as e:
 	print 'Error creating POE Report. Error is ' + str(e)	
-'''	
 	
 	
 ### Health Check ###
