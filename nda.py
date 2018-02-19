@@ -139,12 +139,12 @@ except ImportError:
 # CDP/LLDP Discovery and Mapping method
 
 try:
-	import mnetsuite
+	import mnetsuite_routeallthings
 except ImportError:
 	mnetinstallstatus = fullpath = raw_input ('mnetsuite module is missing, would you like to automatically install? (Y/N): ')
 	if 'y' in mnetinstallstatus.lower():
-		os.system('python -m pip install git+git://github.com/routeallthings/mnet.git')
-		import mnetsuite
+		os.system('python -m pip install git+git://github.com/routeallthings/mnet_routeallthings.git')
+		import mnetsuite_routeallthings
 	else:
 		print 'You selected an option other than yes. Please be aware that this script requires the use of mnetsuite. Please install manually and retry'
 		sys.exit()
@@ -577,9 +577,9 @@ def DEF_GATHERDATA(sshdevice):
 		fsmtemplatenamefile.close()
 		# Show IP Interface Brief
 		if "cisco_ios" in sshdevicetype.lower():
-			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_powerinline.template"
+			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_ipintbr.template"
 		if "cisco_xe" in sshdevicetype.lower():
-			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_powerinline.template"
+			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_ipintbr.template"
 		if "cisco_nxos" in sshdevicetype.lower():
 			fsmshowurl = "placeholder"
 		fsmtemplatename = sshdevicetype.lower() + '_fsmipintbr.fsm'
@@ -588,7 +588,6 @@ def DEF_GATHERDATA(sshdevice):
 		fsmtemplatenamefile = open(fsmtemplatename)
 		fsmipintbrtemplate = textfsm.TextFSM(fsmtemplatenamefile)
 		tempfilelist.append(fsmtemplatenamefile)
-		print fsmtemplatenamefile
 		fsmtemplatenamefile.close()
 		#################################################################
 		##################### DOWNLOAD TEMPLATES END ####################
@@ -1437,7 +1436,7 @@ if __name__ == "__main__":
 	# Get Devices from CDP and check to ignore duplicates imported from XLSX
 	if devicediscoveryv == 1 or not 'na' in deviceseedv.lower():
 		# SNMP Section
-		graph = mnetsuite.mnet_graph()
+		graph = mnetsuite_routeallthings.mnet_graph()
 		opt_dot = None
 		opt_depth = devicediscoverydepthv
 		opt_title = devicediscoverymaptitlev
@@ -1745,11 +1744,11 @@ try:
 		ws3.append(['Hostname','Interface','IP Address'])
 		startrow = 2
 		for row in l3interfacelist:
-			ws3['A' + str(startrow)] = row.get('Hostname')
-			ws3['B' + str(startrow)] = row.get('Interface')
-			ws3['C' + str(startrow)] = row.get('IP Address')
-			startrow = startrow + 1
-			ws3 = wb.create_sheet(title="L3 Interfaces")
+			if not 'unassigned' in row.get('IP Address').lower():
+				ws3['A' + str(startrow)] = row.get('Hostname')
+				ws3['B' + str(startrow)] = row.get('Interface')
+				ws3['C' + str(startrow)] = row.get('IP Address')
+				startrow = startrow + 1
 	except Exception as e:
 		print 'Error creating L3 Interface Report. Error is ' + str(e)	
 	wb.save(filename = dest_path)
