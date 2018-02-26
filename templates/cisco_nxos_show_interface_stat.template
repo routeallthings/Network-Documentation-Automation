@@ -1,5 +1,5 @@
 Value PORT (\S+)
-Value NAME (\S+(?:\s\w+\s\w+)?)
+Value NAME (.*)
 Value STATUS (\w+?)
 Value VLAN (\w+|\d+?)
 Value DUPLEX (full|auto|half)
