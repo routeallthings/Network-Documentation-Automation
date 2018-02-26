@@ -141,7 +141,7 @@ except ImportError:
 try:
 	import mnetsuite_routeallthings
 except ImportError:
-	mnetinstallstatus = fullpath = raw_input ('mnetsuite module is missing, would you like to automatically install? (Y/N): ')
+	mnetinstallstatus = fullpath = raw_input ('mnetsuite module (routeallthings variant) is missing, would you like to automatically install? (Y/N): ')
 	if 'y' in mnetinstallstatus.lower():
 		os.system('python -m pip install git+git://github.com/routeallthings/mnet_routeallthings.git')
 		import mnetsuite_routeallthings
@@ -191,6 +191,7 @@ showbgptable = "show ip bgp"
 showiproute = "show ip route"
 showvrf = "show vrf"
 showtemp = "show env temperature status"
+showtemp_nxos = "show env temperature"
 showippimnei = "show ip pim neighbor"
 showmroute = "show ip mroute"
 showigmpsnoop = "show ip igmp snooping"
@@ -205,7 +206,7 @@ showlocation = "show run | i ^snmp-server location"
 # Device Match Lists
 ciscoxelist = '3650 3850 9300 9400 9500 4500 4431 4451 4321 4331 4351 asr'
 ciscoioslist = '3750 2960 3560 6500 2801 2811 2821 2851 2911 2921 2951 2901 3825 3845'
-cisconxoslist = '7700 7000 Nexus'
+cisconxoslist = '7700 7000 Nexus N5K N7K N3K N4K N6K N9K N77'
 
 # Device Match Lists Convert
 ciscoxelist = ciscoxelist.split(' ')
@@ -222,8 +223,12 @@ switchlist = switchlist.split(' ')
 routerlist = routerlist.split(' ')
 fwlist = fwlist.split(' ')
 
-# Cisco Version Number Regex
+# Cisco IOS Version Number Regex
 ciscoverreg = '1[256]\.[1-9]\(.*\).*'
+nxosverreg = '[4-8].[0-9]\([0-9]\)'
+
+# HP OS Number Regex
+hpproductreg = '^[A-Z][0-9]{3}.$'
 
 # Create empty lists for script use
 healthchecklist = []
@@ -330,7 +335,10 @@ if devicediscoverymaptitlev == None:
 if devicediscoverymapv == 1:
 	import pydot
 	pydottest = pydot.find_graphviz()
-	if not 'neato' in pydottest:
+	try:
+		if not 'neato' in pydottest:
+			print 'Could not find graphviz. Please make sure the PATH variable is set in windows to the correct location, and that the product is installed'
+	except:
 		print 'Could not find graphviz. Please make sure the PATH variable is set in windows to the correct location, and that the product is installed'
 mnetvar = {}
 mnetsnmp = []
@@ -473,7 +481,11 @@ def DEF_GATHERDATA(sshdevice):
 				break
 			except:
 				pass
-		if not sshnet_connect:
+		try:
+			if not sshnet_connect:
+				thread.exit()
+		except:
+			print 'Error with connecting to ' + sshdeviceip
 			thread.exit()
 		sshdevicehostname = sshnet_connect.find_prompt()
 		sshdevicehostname = sshdevicehostname.strip('#')
@@ -497,7 +509,7 @@ def DEF_GATHERDATA(sshdevice):
 		if "cisco_xe" in sshdevicetype.lower():
 			fsmshowinvurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_inventory.template"
 		if "cisco_nxos" in sshdevicetype.lower():
-			fsmshowinvurl = "placeholder"
+			fsmshowinvurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_inventory.template"
 		fsmtemplatename = sshdevicetype.lower() + '_fsmshowinventory.fsm'
 		if not os.path.isfile(fsmtemplatename):
 			urllib.urlretrieve(fsmshowinvurl, fsmtemplatename)
@@ -511,7 +523,7 @@ def DEF_GATHERDATA(sshdevice):
 		if "cisco_xe" in sshdevicetype.lower():
 			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_iparp.template"
 		if "cisco_nxos" in sshdevicetype.lower():
-			fsmshowurl = "placeholder"
+			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_iparp.template"
 		fsmtemplatename = sshdevicetype.lower() + '_fsmiparptable.fsm'
 		if not os.path.isfile(fsmtemplatename):
 			urllib.urlretrieve(fsmshowurl, fsmtemplatename)
@@ -525,7 +537,7 @@ def DEF_GATHERDATA(sshdevice):
 		if "cisco_xe" in sshdevicetype.lower():
 			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_mac.template"
 		if "cisco_nxos" in sshdevicetype.lower():
-			fsmshowurl = "placeholder"
+			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_mac.template"
 		fsmtemplatename = sshdevicetype.lower() + '_fsmmactable.fsm'
 		if not os.path.isfile(fsmtemplatename):
 			urllib.urlretrieve(fsmshowurl, fsmtemplatename)
@@ -539,7 +551,7 @@ def DEF_GATHERDATA(sshdevice):
 		if "cisco_xe" in sshdevicetype.lower():
 			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_version.template"
 		if "cisco_nxos" in sshdevicetype.lower():
-			fsmshowurl = "placeholder"
+			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_version.template"
 		fsmtemplatename = sshdevicetype.lower() + '_fsmversion.fsm'
 		if not os.path.isfile(fsmtemplatename):
 			urllib.urlretrieve(fsmshowurl, fsmtemplatename)
@@ -553,7 +565,7 @@ def DEF_GATHERDATA(sshdevice):
 		if "cisco_xe" in sshdevicetype.lower():
 			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_interface_stat.template"
 		if "cisco_nxos" in sshdevicetype.lower():
-			fsmshowurl = "placeholder"
+			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_interface_stat.template"
 		fsmtemplatename = sshdevicetype.lower() + '_fsminterfacestat.fsm'
 		if not os.path.isfile(fsmtemplatename):
 			urllib.urlretrieve(fsmshowurl, fsmtemplatename)
@@ -566,8 +578,6 @@ def DEF_GATHERDATA(sshdevice):
 			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_powerinline.template"
 		if "cisco_xe" in sshdevicetype.lower():
 			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_powerinline.template"
-		if "cisco_nxos" in sshdevicetype.lower():
-			fsmshowurl = "placeholder"
 		fsmtemplatename = sshdevicetype.lower() + '_fsmpowerinline.fsm'
 		if not os.path.isfile(fsmtemplatename):
 			urllib.urlretrieve(fsmshowurl, fsmtemplatename)
@@ -581,7 +591,7 @@ def DEF_GATHERDATA(sshdevice):
 		if "cisco_xe" in sshdevicetype.lower():
 			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_ipintbr.template"
 		if "cisco_nxos" in sshdevicetype.lower():
-			fsmshowurl = "placeholder"
+			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_ipintbr.template"
 		fsmtemplatename = sshdevicetype.lower() + '_fsmipintbr.fsm'
 		if not os.path.isfile(fsmtemplatename):
 			urllib.urlretrieve(fsmshowurl, fsmtemplatename)
@@ -993,6 +1003,7 @@ def DEF_GATHERDATA(sshdevice):
 			sshresult = sshnet_connect.send_command(sshcommand)
 			if not 'invalid' in sshresult:
 				DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)
+		print 'Completed device information gathering for ' + sshdeviceip
 		#################################################################
 		########################### MISC END ############################
 		#################################################################
@@ -1002,20 +1013,19 @@ def DEF_GATHERDATA(sshdevice):
 		try:
 			sshnet_connect.disconnect()
 		except:
-			'''Nothing'''
+			pass
 	except Exception as e:
-		print 'Error while gather data with ' + sshdeviceip + '. Error is ' + str(e)
+		print 'Error while gathering data on ' + sshdeviceip + '. Error is ' + str(e)
 		try:
 			sshnet_connect.disconnect()
 		except:
-			'''Nothing'''
+			pass
 	except KeyboardInterrupt:
 		print 'CTRL-C pressed, exiting script'
 		try:
 			sshnet_connect.disconnect()
 		except:
-			'''Nothing'''
-	print 'Completed device information gathering for ' + sshdeviceip
+			pass
 
 def DEF_HEALTHCHECK(sshdevice):
 	sshdeviceip = sshdevice.get('Device IPs').encode('utf-8')
@@ -1029,7 +1039,7 @@ def DEF_HEALTHCHECK(sshdevice):
 	if "cisco_xe" in sshdevicetype:
 		fsmshowinturl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_interfaces_health.template"
 	if "cisco_nxos" in sshdevicetype:
-		fsmshowinturl = "placeholder"
+		fsmshowinturl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_interfaces_health.template"
 	fsmtemplatename = sshdevicetype + '_fsmshowint.fsm'
 	if not os.path.isfile(fsmtemplatename):
 		urllib.urlretrieve(fsmshowinturl, fsmtemplatename)
@@ -1043,7 +1053,7 @@ def DEF_HEALTHCHECK(sshdevice):
 	if "cisco_xe" in sshdevicetype:
 		fsmshowtempurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_temp_health.template"
 	if "cisco_nxos" in sshdevicetype:
-		fsmshowtempurl = "placeholder"	
+		fsmshowtempurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_temp_health.template"	
 	fsmtemplatename = sshdevicetype + '_fsmshowtemp.fsm'
 	if not os.path.isfile(fsmtemplatename):
 		urllib.urlretrieve(fsmshowtempurl, fsmtemplatename)
@@ -1070,7 +1080,11 @@ def DEF_HEALTHCHECK(sshdevice):
 					pass
 			except:
 				pass
-		if not sshnet_connect:
+		try:
+			if not sshnet_connect:
+				thread.exit()
+		except:
+			print 'Error with connecting to ' + sshdeviceip
 			thread.exit()
 		sshdevicehostname = sshnet_connect.find_prompt()
 		sshdevicehostname = sshdevicehostname.strip('#')
@@ -1157,17 +1171,30 @@ def DEF_HEALTHCHECK(sshdevice):
 					healthcheckcsv.append ((sshdevicehostname + ',' + hcerror + ',' + hcdescription))
 		#Show Temperature
 		try:
-			sshcommand = showtemp
-			sshresult = sshnet_connect.send_command(sshcommand)
-			hcshowtemp = fsmtemptemplate.ParseText(sshresult)
-			hctempdegrees = hcshowtemp[0]
-			hctempdegrees = hctempdegrees[0]
-			hctempdegrees = hctempdegrees.encode('utf-8')
-			hctempdegreesint = int(hctempdegrees)
-			if hctempdegreesint > 45:
-				hcerror = 'Temperature Alert'
-				hcdescription = 'Temperature has been recorded at ' + hctempdegrees + ' Celsius. Please lower the temperature for the surrounding environment '
-				healthcheckcsv.append ((sshdevicehostname + ',' + hcerror + ',' + hcdescription))
+			if not 'nxos' in sshdevicetype:
+				sshcommand = showtemp
+				sshresult = sshnet_connect.send_command(sshcommand)
+				hcshowtemp = fsmtemptemplate.ParseText(sshresult)
+				hctempdegrees = hcshowtemp[0]
+				hctempdegrees = hctempdegrees[0]
+				hctempdegrees = hctempdegrees.encode('utf-8')
+				hctempdegreesint = int(hctempdegrees)
+				if hctempdegreesint > 45:
+					hcerror = 'Temperature Alert'
+					hcdescription = 'Temperature has been recorded at ' + hctempdegrees + ' Celsius. Please lower the temperature for the surrounding environment '
+					healthcheckcsv.append ((sshdevicehostname + ',' + hcerror + ',' + hcdescription))
+			else:
+				sshcommand = showtemp_nxos
+				sshresult = sshnet_connect.send_command(sshcommand)
+				hcshowtemp = fsmtemptemplate.ParseText(sshresult)
+				hctempdegrees = hcshowtemp[0]
+				hctempdegrees = hctempdegrees[0]
+				hctempdegrees = hctempdegrees.encode('utf-8')
+				hctempdegreesint = int(hctempdegrees)
+				if hctempdegreesint > 45:
+					hcerror = 'Temperature Alert'
+					hcdescription = 'Temperature has been recorded at ' + hctempdegrees + ' Celsius. Please lower the temperature for the surrounding environment '
+					healthcheckcsv.append ((sshdevicehostname + ',' + hcerror + ',' + hcdescription))
 		except:
 			pass
 		# Exit SSH
@@ -1189,19 +1216,19 @@ def DEF_HEALTHCHECK(sshdevice):
 		try:
 			sshnet_connect.disconnect()
 		except:
-			'''Nothing'''
+			pass
 	except Exception as e:
 		print 'Error while running health check with ' + sshdeviceip + '. Error is ' + str(e)
 		try:
 			sshnet_connect.disconnect()
 		except:
-			'''Nothing'''
+			pass
 	except KeyboardInterrupt:
 		print 'CTRL-C pressed, exiting script'
 		try:
 			sshnet_connect.disconnect()
 		except:
-			'''Nothing'''
+			pass
 	print 'Completed health check for ' + sshdeviceip
 	try:
 		sshnet_connect.disconnect()
@@ -1218,7 +1245,7 @@ def DEF_CDPDISCOVERY(sshusername,sshpassword,enablesecret,cdpseedv,cdpdevicetype
 	if "cisco_xe" in cdpdevicetypev.lower():
 		fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_cdp_nei_detail.template"
 	if "cisco_nxos" in cdpdevicetypev.lower():
-		fsmshowcdpurl = "placeholder"
+		fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_cdp_nei_detail.template"
 	fsmtemplatename = cdpdevicetypev.lower() + '_fsmshowcdp.fsm'
 	if not os.path.isfile(fsmtemplatename):
 		urllib.urlretrieve(fsmshowcdpurl, fsmtemplatename)
@@ -1241,7 +1268,11 @@ def DEF_CDPDISCOVERY(sshusername,sshpassword,enablesecret,cdpseedv,cdpdevicetype
 			break
 		except:
 			pass
-	if not sshnet_connect:
+	try:
+		if not sshnet_connect:
+			thread.exit()
+	except:
+		print 'Error with connecting to ' + sshdeviceip
 		thread.exit()
 	sshdevicehostname = sshnet_connect.find_prompt()
 	sshdevicehostname = sshdevicehostname.strip('#')
@@ -1314,7 +1345,7 @@ def DEF_CDPDISCOVERY(sshusername,sshpassword,enablesecret,cdpseedv,cdpdevicetype
 			if "cisco_xe" in cdpdevicetype.lower():
 				fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_cdp_nei_detail.template"
 			if "cisco_nxos" in cdpdevicetype.lower():
-				fsmshowcdpurl = "placeholder"
+				fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_cdp_nei_detail.template"
 			fsmtemplatename = cdpdevicetype.lower() + '_fsmshowcdp.fsm'
 			if not os.path.isfile(fsmtemplatename):
 				urllib.urlretrieve(fsmshowcdpurl, fsmtemplatename)
@@ -1337,8 +1368,12 @@ def DEF_CDPDISCOVERY(sshusername,sshpassword,enablesecret,cdpseedv,cdpdevicetype
 					break
 				except:
 					pass
-			if not sshnet_connect:
-				thread.exit()
+			try:
+				if not sshnet_connect:
+					thread.exit()
+			except:
+				print 'Error with connecting to ' + sshdeviceip
+				thread.exit()				
 			sshdevicehostname = sshnet_connect.find_prompt()
 			sshdevicehostname = sshdevicehostname.strip('#')
 			if '>' in sshdevicehostname:
@@ -1460,13 +1495,22 @@ if __name__ == "__main__":
 			try:
 				# Point based system to match devices
 				ciscopoints = 0
+				hppoints = 0
 				if row[1] == '':
 					ciscopoints = ciscopoints - 50
+					hppoints = hppoints - 50
 				if row[6] != 'None':
 					ciscopoints = ciscopoints + 5
 				if re.match(ciscoverreg, row[3]):
 					ciscopoints = ciscopoints + 5
+				if re.match(nxosverreg, row[3]):
+					ciscopoints = ciscopoints + 5
+				if re.match(hpproductreg, row[2]):
+					hppoints = hppoints + 5
 				# Check point total for Cisco match
+				print row[1]
+				print ciscopoints
+				print hppoints
 				if ciscopoints > 4:
 					snmpdiscoverylist = {}
 					snmpdeviceip = snmpdiscoverylist['Device IPs'] = row[1]
@@ -1489,6 +1533,28 @@ if __name__ == "__main__":
 							pass
 					if snmpduplicate == 0:
 						sshdevices.append(snmpdiscoverylist)
+					continue
+				if hppoints > 4:
+					snmpdiscoverylist = {}
+					snmpdeviceip = snmpdiscoverylist['Device IPs'] = row[1]
+					snmpdiscoverylist['Device IPs'] = snmpdeviceip
+					snmpdiscoverylist['Vendor'] = 'HP'
+					# Check for device type logic
+					if any(word in row[3] for word in hpprocurveoslist):
+						snmpdiscoverydevicetype = 'procurve'
+					if any(word in row[3] for word in hpcomwareoslist):
+						snmpdiscoverydevicetype = 'comware'
+					snmpdiscoverylist['Type'] = snmpdiscoverydevicetype
+					snmpduplicate = 0
+					for sshdevice in sshdevices:
+						try:
+							if snmpdeviceip == sshdevice.get('Device IPs').encode('utf-8'):
+								snmpduplicate = 1
+						except:
+							pass
+					if snmpduplicate == 0:
+						sshdevices.append(snmpdiscoverylist)
+					continue
 			except:
 				pass
 		mnetcatfile.close()

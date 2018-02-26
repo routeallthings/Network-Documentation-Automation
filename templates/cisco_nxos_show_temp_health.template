@@ -1,0 +1,5 @@
+Value SYS_TEMP (\d+)
+Value SYS_STATE (\S+)
+
+Start
+  ^.*[0-9]{2}\s+[0-9]{2}\s+${SYS_TEMP}\s+${SYS_STATE} -> Record
