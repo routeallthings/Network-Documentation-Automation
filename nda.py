@@ -578,6 +578,8 @@ def DEF_GATHERDATA(sshdevice):
 			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_powerinline.template"
 		if "cisco_xe" in sshdevicetype.lower():
 			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_powerinline.template"
+		if 'cisco_nxos' in sshdevicetype.lower():
+			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_enviroment_power.template"
 		fsmtemplatename = sshdevicetype.lower() + '_fsmpowerinline.fsm'
 		if not os.path.isfile(fsmtemplatename):
 			urllib.urlretrieve(fsmshowurl, fsmtemplatename)
