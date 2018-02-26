@@ -166,6 +166,8 @@ except ImportError:
 ipv4_address = re.compile('((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)')
 
 #Creation of SSH commands
+
+# Cisco IOS/XE
 showrun = "show running-config"
 showstart = "show startup-config"
 showver = "show version"
@@ -191,7 +193,6 @@ showbgptable = "show ip bgp"
 showiproute = "show ip route"
 showvrf = "show vrf"
 showtemp = "show env temperature status"
-showtemp_nxos = "show env temperature"
 showippimnei = "show ip pim neighbor"
 showmroute = "show ip mroute"
 showigmpsnoop = "show ip igmp snooping"
@@ -201,7 +202,13 @@ showinterfacet = "show interface transceiver"
 showiparp = "show ip arp"
 showmacaddress = "show mac address-table"
 showmacaddress_older = "show mac-address-table"
-showlocation = "show run | i ^snmp-server location"
+showlocation = "show running-config | include ^snmp-server location"
+
+# NXOS Specific
+showpowerinline_nxos = "show environment power"
+showtemp_nxos = "show env temperature"
+showlocation_nxos = "show running-config | include '^snmp-server location'"
+showinttrans = "show interface transceiver"
 
 # Device Match Lists
 ciscoxelist = '3650 3850 9300 9400 9500 4500 4431 4451 4321 4331 4351 asr'
@@ -601,6 +608,16 @@ def DEF_GATHERDATA(sshdevice):
 		fsmipintbrtemplate = textfsm.TextFSM(fsmtemplatenamefile)
 		tempfilelist.append(fsmtemplatenamefile)
 		fsmtemplatenamefile.close()
+		# Show Interface Transceiver
+		if "cisco_nxos" in sshdevicetype.lower():
+			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_inttrans.template"
+			fsmtemplatename = sshdevicetype.lower() + '_fsminttrans.fsm'
+			if not os.path.isfile(fsmtemplatename):
+				urllib.urlretrieve(fsmshowurl, fsmtemplatename)
+			fsmtemplatenamefile = open(fsmtemplatename)
+			fsminttranstemplate = textfsm.TextFSM(fsmtemplatenamefile)
+			tempfilelist.append(fsmtemplatenamefile)
+			fsmtemplatenamefile.close()
 		#################################################################
 		##################### DOWNLOAD TEMPLATES END ####################
 		#################################################################
@@ -648,21 +665,39 @@ def DEF_GATHERDATA(sshdevice):
 		# Export Version, used later in the full inventory list (NOT A GLOBAL LIST) #
 		data = fsmvertemplate.ParseText(sshresult)
 		tempversioninfo = []
-		for subrow in data:
-			# Get Version Number and attach to temporary dictionary
-			ver_ver = subrow[0]
-			ver_host = subrow[2]
-			# Create Temp Dictionary
-			tempdict = {}
-			# Append Data to Temp Dictionary
-			tempdict['Version'] = ver_ver
-			tempdict['Hostname'] = ver_host
-			# Append Temp Dictionary to Global List
-			tempversioninfo.append(tempdict)
+		if sshdevicetype.lower() == 'cisco_ios' or sshdevicetype.lower() == 'cisco_xe':
+			for subrow in data:
+				# Get Version Number and attach to temporary dictionary
+				ver_ver = subrow[0]
+				ver_host = subrow[2]
+				# Create Temp Dictionary
+				tempdict = {}
+				# Append Data to Temp Dictionary
+				tempdict['Version'] = ver_ver
+				tempdict['Hostname'] = ver_host
+				# Append Temp Dictionary to Global List
+				tempversioninfo.append(tempdict)
+		if sshdevicetype.lower() == 'cisco_nxos':
+			for subrow in data:
+				# Get Version Number and attach to temporary dictionary
+				ver_ver = subrow[2]
+				ver_host = sshdevicehostname
+				# Create Temp Dictionary
+				tempdict = {}
+				# Append Data to Temp Dictionary
+				tempdict['Version'] = ver_ver
+				tempdict['Hostname'] = ver_host
+				# Append Temp Dictionary to Global List
+				tempversioninfo.append(tempdict)
 		######################## Show Location #########################
-		sshcommand = showlocation
-		sshresult = sshnet_connect.send_command(sshcommand)
-		inv_location = DEF_REMOVEPREFIX(sshresult,'snmp-server location ')
+		if sshdevicetype.lower() == 'cisco_ios' or sshdevicetype.lower() == 'cisco_xe':
+			sshcommand = showlocation
+			sshresult = sshnet_connect.send_command(sshcommand)
+			inv_location = DEF_REMOVEPREFIX(sshresult,'snmp-server location ')
+		if sshdevicetype.lower() == 'cisco_nxos':
+			sshcommand = showlocation_nxos
+			sshresult = sshnet_connect.send_command(sshcommand)
+			inv_location = DEF_REMOVEPREFIX(sshresult,'snmp-server location ')
 		######################## Show Inventory #########################
 		sshcommand = showinv
 		sshresult = sshnet_connect.send_command(sshcommand)
@@ -677,34 +712,85 @@ def DEF_GATHERDATA(sshdevice):
 			DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)
 		# Export Inventory #
 		data = fsminvtemplate.ParseText(sshresult)
-		for subrow in data:
-			# Get Product Name, Product Serial Number, Description and Stack
-			inv_pid = subrow[2]
-			inv_sn = subrow[4]
-			if re.match('^[1-8]$',subrow[0]) or re.match('^Switch [1-8]$',subrow[0]):
-				inv_stack = subrow[0]
-				inv_desc = 'Switch chassis'
-			else:
-				inv_stack = ''
-				inv_desc = subrow[0]
-			if re.match('^GLC|SFP.*',inv_pid):
+		if sshdevicetype.lower() == 'cisco_ios' or sshdevicetype.lower() == 'cisco_xe':
+			for subrow in data:
+				# Get Product Name, Product Serial Number, Description and Stack
+				inv_pid = subrow[2]
+				inv_sn = subrow[4]
+				if re.match('^[1-8]$',subrow[0]) or re.match('^Switch [1-8]$',subrow[0]):
+					inv_stack = subrow[0]
+					inv_desc = 'Switch chassis'
+				else:
+					inv_stack = ''
+					inv_desc = subrow[0]
+				if re.match('^GLC|SFP.*',inv_pid):
+					inv_desc = subrow[1]
+				# Get Version number from already created list
+				for subrow1 in tempversioninfo:
+					if sshdevicehostname == subrow1.get('Hostname'):
+						inv_ver = subrow1.get('Version')
+				# Create Temp Dictionary
+				tempdict = {}
+				# Append Data to Temp Dictionary
+				tempdict['Hostname'] = sshdevicehostname
+				tempdict['Product ID'] = inv_pid
+				tempdict['Serial Number'] = inv_sn
+				tempdict['Description'] = inv_desc
+				tempdict['Stack Number'] = inv_stack
+				tempdict['Version'] = inv_ver
+				tempdict['Location'] = inv_location
+				# Append Temp Dictionary to Global List
+				fullinventorylist.append(tempdict)
+		if sshdevicetype.lower() == 'cisco_nxos':
+			for subrow in data:
+				# Get Product Name, Product Serial Number, Description and Stack
+				inv_pid = subrow[2]
+				inv_sn = subrow[4]
 				inv_desc = subrow[1]
-			# Get Version number from already created list
-			for subrow1 in tempversioninfo:
-				if sshdevicehostname == subrow1.get('Hostname'):
-					inv_ver = subrow1.get('Version')
-			# Create Temp Dictionary
-			tempdict = {}
-			# Append Data to Temp Dictionary
-			tempdict['Hostname'] = sshdevicehostname
-			tempdict['Product ID'] = inv_pid
-			tempdict['Serial Number'] = inv_sn
-			tempdict['Description'] = inv_desc
-			tempdict['Stack Number'] = inv_stack
-			tempdict['Version'] = inv_ver
-			tempdict['Location'] = inv_location
-			# Append Temp Dictionary to Global List
-			fullinventorylist.append(tempdict)
+				# Get Version number from already created list
+				for subrow1 in tempversioninfo:
+					if sshdevicehostname == subrow1.get('Hostname'):
+						inv_ver = subrow1.get('Version')
+				# Create Temp Dictionary
+				tempdict = {}
+				# Append Data to Temp Dictionary
+				tempdict['Hostname'] = sshdevicehostname
+				tempdict['Product ID'] = inv_pid
+				tempdict['Serial Number'] = inv_sn
+				tempdict['Description'] = inv_desc
+				tempdict['Stack Number'] = inv_stack
+				tempdict['Version'] = inv_ver
+				tempdict['Location'] = inv_location
+				# Append Temp Dictionary to Global List
+				fullinventorylist.append(tempdict)
+			# Get transciever info
+			sshcommand = showinttrans
+			sshresult = sshnet_connect.send_command(sshcommand)
+			if not 'invalid' in sshresult:
+				DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)
+			# Export Transceiver #
+			data = fsminttranstemplate.ParseText(sshresult)
+			for subrow in data:
+				# Get Product Name, Product Serial Number, Description and Stack
+				inv_pid = subrow[2]
+				inv_sn = subrow[3]
+				inv_desc = subrow[1]
+				# Get Version number from already created list
+				for subrow1 in tempversioninfo:
+					if sshdevicehostname == subrow1.get('Hostname'):
+						inv_ver = subrow1.get('Version')
+				# Create Temp Dictionary
+				tempdict = {}
+				# Append Data to Temp Dictionary
+				tempdict['Hostname'] = sshdevicehostname
+				tempdict['Product ID'] = inv_pid
+				tempdict['Serial Number'] = inv_sn
+				tempdict['Description'] = inv_desc
+				tempdict['Stack Number'] = inv_stack
+				tempdict['Version'] = inv_ver
+				tempdict['Location'] = inv_location
+				# Append Temp Dictionary to Global List
+				fullinventorylist.append(tempdict)
 		#################################################################
 		######################## STANDARD ALL END #######################
 		#################################################################
@@ -730,81 +816,130 @@ def DEF_GATHERDATA(sshdevice):
 			# Get MAC Interface Count
 			macintcountb = []
 			macintcount = []
-			for macintrow0 in data:
-				macintname = macintrow0[3]
-				tempdict = {}
-				# Duplicate Detection
-				dupdetect = 0
-				for subrow2 in macintcountb:
-					if subrow2.get('Interface') == macintname:
-						dupdetect = 1
-						break
-				if dupdetect == 0:
-					tempdict['Interface'] = macintname
-					macintcountb.append(tempdict)
-			for macintrow1 in macintcountb:
-				maccount = 0
-				macint = macintrow1.get('Interface')
-				for subrow2 in data:
-					if subrow2[3] == macintrow1.get('Interface'):
-						maccount = maccount + 1
-				tempdict = {}
-				tempdict['Count'] = maccount
-				tempdict['Interface'] = macint
-				macintcount.append(tempdict)
-			# Get MAC addresses and append mac count
-			for macintrow2 in data:	
-				# Get Hostname, MAC, VLAN, Interface, Count
-				mac_host = sshdevicehostname
-				mac_mac = macintrow2[0]
-				mac_vlan = macintrow2[2]
-				mac_int = macintrow2[3]
-				for subrow2 in macintcount:
-					if mac_int == subrow2.get('Interface'):
-						mac_count = subrow2.get('Count')
-				# Create Temp Dictionary
-				tempdict = {}
-				# Append Data to Temp Dictionary
-				tempdict['Hostname'] = mac_host
-				tempdict['MAC'] = mac_mac
-				tempdict['VLAN'] = mac_vlan
-				tempdict['Interface'] = mac_int
-				tempdict['Count'] = mac_count
-				mactablelist.append(tempdict)
+			if sshdevicetype.lower() == 'cisco_ios' or sshdevicetype.lower() == 'cisco_xe':
+				for macintrow0 in data:
+					macintname = macintrow0[3]
+					tempdict = {}
+					# Duplicate Detection
+					dupdetect = 0
+					for subrow2 in macintcountb:
+						if subrow2.get('Interface') == macintname:
+							dupdetect = 1
+							break
+					if dupdetect == 0:
+						tempdict['Interface'] = macintname
+						macintcountb.append(tempdict)
+				for macintrow1 in macintcountb:
+					maccount = 0
+					macint = macintrow1.get('Interface')
+					for subrow2 in data:
+						if subrow2[3] == macintrow1.get('Interface'):
+							maccount = maccount + 1
+					tempdict = {}
+					tempdict['Count'] = maccount
+					tempdict['Interface'] = macint
+					macintcount.append(tempdict)
+				# Get MAC addresses and append mac count
+				for macintrow2 in data:	
+					# Get Hostname, MAC, VLAN, Interface, Count
+					mac_host = sshdevicehostname
+					mac_mac = macintrow2[0]
+					mac_vlan = macintrow2[2]
+					mac_int = macintrow2[3]
+					for subrow2 in macintcount:
+						if mac_int == subrow2.get('Interface'):
+							mac_count = subrow2.get('Count')
+					# Create Temp Dictionary
+					tempdict = {}
+					# Append Data to Temp Dictionary
+					tempdict['Hostname'] = mac_host
+					tempdict['MAC'] = mac_mac
+					tempdict['VLAN'] = mac_vlan
+					tempdict['Interface'] = mac_int
+					tempdict['Count'] = mac_count
+					mactablelist.append(tempdict)
+			if sshdevicetype.lower() == 'cisco_nxos':
+				for macintrow0 in data:
+					macintname = macintrow0[6]
+					tempdict = {}
+					# Duplicate Detection
+					dupdetect = 0
+					for subrow2 in macintcountb:
+						if subrow2.get('Interface') == macintname:
+							dupdetect = 1
+							break
+					if dupdetect == 0:
+						tempdict['Interface'] = macintname
+						macintcountb.append(tempdict)
+				for macintrow1 in macintcountb:
+					maccount = 0
+					macint = macintrow1.get('Interface')
+					for subrow2 in data:
+						if subrow2[6] == macintrow1.get('Interface'):
+							maccount = maccount + 1
+					tempdict = {}
+					tempdict['Count'] = maccount
+					tempdict['Interface'] = macint
+					macintcount.append(tempdict)
+				# Get MAC addresses and append mac count
+				for macintrow2 in data:	
+					# Get Hostname, MAC, VLAN, Interface, Count
+					mac_host = sshdevicehostname
+					mac_mac = macintrow2[1]
+					mac_vlan = macintrow2[0]
+					mac_int = macintrow2[6]
+					for subrow2 in macintcount:
+						if mac_int == subrow2.get('Interface'):
+							mac_count = subrow2.get('Count')
+					# Create Temp Dictionary
+					tempdict = {}
+					# Append Data to Temp Dictionary
+					tempdict['Hostname'] = mac_host
+					tempdict['MAC'] = mac_mac
+					tempdict['VLAN'] = mac_vlan
+					tempdict['Interface'] = mac_int
+					tempdict['Count'] = mac_count
+					mactablelist.append(tempdict)
 			######################## Show Power Budget #########################
 			if powerbudget == 1:
 				######################## Show Power Inline #########################
-				sshcommand = showpowerinline
-				sshresult = sshnet_connect.send_command(sshcommand)
-				if not 'invalid' in sshresult:
+				if sshdevicetype.lower() == 'cisco_ios' or sshdevicetype.lower() == 'cisco_xe':
+					sshcommand = showpowerinline
+					sshresult = sshnet_connect.send_command(sshcommand)
+					if not 'invalid' in sshresult:
 						DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)
-						# Export Power Inline
-						data = fsmpoeporttemplate.ParseText(sshresult)
-						for subrow in data:
-							# Get Int, Admin, Oper, Power, Device, Class, Max POE
-							pow_oper = subrow[2]
-							if 'on' in pow_oper.lower():
-								pow_oper = 'Up'
-							else:
-								pow_oper = 'Down'
-							# Create Temp Dictionary
-							tempdict = {}
-							# Append Data to Temp Dictionary
-							tempdict['Hostname'] = sshdevicehostname
-							tempdict['Interface'] = subrow[0]
-							tempdict['Admin Status'] = subrow[1]
-							tempdict['Up/Down'] = pow_oper
-							tempdict['Power Usage'] = subrow[3]
-							tempdict['Device Name'] = subrow[4]
-							tempdict['Device Class'] = subrow[5]
-							tempdict['Max POE Capability'] = subrow[6]
-							# Append Temp Dictionary to Global List
-							poeinterfacelist.append(tempdict)
-				######################## Show Stack Power #########################
-				sshcommand = showpowerinline
-				sshresult = sshnet_connect.send_command(showstackpower)
-				if not 'invalid' in sshresult:
-						DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)	
+					# Export Power Inline
+					data = fsmpoeporttemplate.ParseText(sshresult)
+					for subrow in data:
+						# Get Int, Admin, Oper, Power, Device, Class, Max POE
+						pow_oper = subrow[2]
+						if 'on' in pow_oper.lower():
+							pow_oper = 'Up'
+						else:
+							pow_oper = 'Down'
+						# Create Temp Dictionary
+						tempdict = {}
+						# Append Data to Temp Dictionary
+						tempdict['Hostname'] = sshdevicehostname
+						tempdict['Interface'] = subrow[0]
+						tempdict['Admin Status'] = subrow[1]
+						tempdict['Up/Down'] = pow_oper
+						tempdict['Power Usage'] = subrow[3]
+						tempdict['Device Name'] = subrow[4]
+						tempdict['Device Class'] = subrow[5]
+						tempdict['Max POE Capability'] = subrow[6]
+						# Append Temp Dictionary to Global List
+						poeinterfacelist.append(tempdict)
+					######################## Show Stack Power #########################
+					sshcommand = showstackpower
+					sshresult = sshnet_connect.send_command(sshcommand)
+					if not 'invalid' in sshresult:
+							DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)
+				if sshdevicetype.lower() == 'cisco_nxos':
+					sshcommand = showpowerinline_nxos
+					sshresult = sshnet_connect.send_command(sshcommand)
+					if not 'invalid' in sshresult:
+						DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)
 			#Show Switch Stack
 			sshcommand = showswitch
 			sshresult = sshnet_connect.send_command(sshcommand)
