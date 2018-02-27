@@ -1,10 +1,10 @@
-Value INTERFACE (Ethernet(\S+))
+Value INTERFACE (Ethernet\S+)
 Value TYPE (\S+)
 Value PARTNUMBER (\S+)
 Value SERIALNUMBER (\S+)
 
 Start
-  ^${INTERFACE}
-  ^type is ${TYPE}
-  ^part number is ${PARTNUMBER}
-  ^serial number is ${SERIALNUMBER} -> Record
+  ^.*${INTERFACE}
+  ^.*type is ${TYPE}
+  ^.*part number is ${PARTNUMBER}
+  ^.*serial number is ${SERIALNUMBER} -> Record

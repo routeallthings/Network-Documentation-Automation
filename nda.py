@@ -234,8 +234,8 @@ fwlist = fwlist.split(' ')
 ciscoverreg = '1[256]\.[1-9]\(.*\).*'
 nxosverreg = '[4-8].[0-9]\([0-9]\)'
 
-# HP OS Number Regex
-hpproductreg = '^[A-Z][0-9]{3}.$'
+# HP Product Number Regex
+hpproductreg = re.compile('^[A-Z][0-9]{3}.*$')
 
 # Create empty lists for script use
 healthchecklist = []
@@ -258,6 +258,9 @@ poeinterfacelist = []
 # URLs to use
 maclookupurl = 'http://macvendors.co/api/%s'
 maclookupdburl = "https://linuxnet.ca/ieee/oui.txt"
+
+# Regex
+IP_ADDRESS = re.compile("^\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}$")
 
 '''Global Variable Questions'''
 print ''
@@ -490,10 +493,10 @@ def DEF_GATHERDATA(sshdevice):
 				pass
 		try:
 			if not sshnet_connect:
-				thread.exit()
+				sys.exit()
 		except:
 			print 'Error with connecting to ' + sshdeviceip
-			thread.exit()
+			sys.exit()
 		sshdevicehostname = sshnet_connect.find_prompt()
 		sshdevicehostname = sshdevicehostname.strip('#')
 		if '>' in sshdevicehostname:
@@ -758,7 +761,7 @@ def DEF_GATHERDATA(sshdevice):
 				tempdict['Product ID'] = inv_pid
 				tempdict['Serial Number'] = inv_sn
 				tempdict['Description'] = inv_desc
-				tempdict['Stack Number'] = inv_stack
+				tempdict['Stack Number'] = ''
 				tempdict['Version'] = inv_ver
 				tempdict['Location'] = inv_location
 				# Append Temp Dictionary to Global List
@@ -786,7 +789,7 @@ def DEF_GATHERDATA(sshdevice):
 				tempdict['Product ID'] = inv_pid
 				tempdict['Serial Number'] = inv_sn
 				tempdict['Description'] = inv_desc
-				tempdict['Stack Number'] = inv_stack
+				tempdict['Stack Number'] = ''
 				tempdict['Version'] = inv_ver
 				tempdict['Location'] = inv_location
 				# Append Temp Dictionary to Global List
@@ -982,7 +985,7 @@ def DEF_GATHERDATA(sshdevice):
 		#################################################################
 		#################### ROUTING SPECIFIC START #####################
 		#################################################################
-		if 'ip routing' in showrunresult.lower():
+		if 'ip routing' in showrunresult.lower() or 'cisco_nxos' in sshdevicetype:
 			######################## Show IP ARP #########################
 			sshcommand = showiparp
 			sshresult = sshnet_connect.send_command(sshcommand)
@@ -1107,18 +1110,35 @@ def DEF_GATHERDATA(sshdevice):
 		if not 'invalid' in sshresult:
 			DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)
 		data = fsmipintbrtemplate.ParseText(sshresult)
-		for subrow in data:
-			# Get Interface,Description,Status,VLAN,Duplex,Speed,Type
-			# Create Temp Dictionary
-			tempdict = {}
-			# Append Data to Temp Dictionary
-			tempdict['Hostname'] = sshdevicehostname
-			tempdict['Interface'] = subrow[0]
-			tempdict['IP Address'] = subrow[1]
-			tempdict['Status'] = subrow[2]
-			tempdict['Line Protocol'] = subrow[3]
-			# Append Temp Dictionary to Global List
-			l3interfacelist.append(tempdict)
+		if sshdevicetype.lower() == 'cisco_ios' or sshdevicetype.lower() == 'cisco_xe':
+			for subrow in data:
+				# Get Interface,Description,Status,VLAN,Duplex,Speed,Type
+				# Create Temp Dictionary
+				tempdict = {}
+				# Append Data to Temp Dictionary
+				tempdict['Hostname'] = sshdevicehostname
+				tempdict['Interface'] = subrow[0]
+				tempdict['IP Address'] = subrow[1]
+				tempdict['Status'] = subrow[2]
+				tempdict['Line Protocol'] = subrow[3]
+				# Append Temp Dictionary to Global List
+				l3interfacelist.append(tempdict)
+		if sshdevicetype.lower() == 'cisco_nxos':
+			for subrow in data:
+				# Get Interface,Description,Status,VLAN,Duplex,Speed,Type
+				# Create Temp Dictionary
+				tempdict = {}
+				# Modify Values
+				
+				# Append Data to Temp Dictionary
+				tempdict['Hostname'] = sshdevicehostname
+				tempdict['VRF'] = subrow[0]
+				tempdict['Interface'] = subrow[1]
+				tempdict['IP Address'] = subrow[2]
+				tempdict['Status'] = subrow[5]
+				tempdict['Line Protocol'] = subrow[3]
+				# Append Temp Dictionary to Global List
+				l3interfacelist.append(tempdict)
 		######################## Show IGMP Snooping #########################
 		sshcommand = showigmpsnoop
 		sshresult = sshnet_connect.send_command(sshcommand)
@@ -1177,7 +1197,7 @@ def DEF_HEALTHCHECK(sshdevice):
 		fsmshowinturl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_interfaces_health.template"
 	if "cisco_nxos" in sshdevicetype:
 		fsmshowinturl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_interfaces_health.template"
-	fsmtemplatename = sshdevicetype + '_fsmshowint.fsm'
+	fsmtemplatename = sshdevicetype + '_fsmshowint_health.fsm'
 	if not os.path.isfile(fsmtemplatename):
 		urllib.urlretrieve(fsmshowinturl, fsmtemplatename)
 	fsmtemplatenamefile = open(fsmtemplatename)
@@ -1191,7 +1211,7 @@ def DEF_HEALTHCHECK(sshdevice):
 		fsmshowtempurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_temp_health.template"
 	if "cisco_nxos" in sshdevicetype:
 		fsmshowtempurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_temp_health.template"	
-	fsmtemplatename = sshdevicetype + '_fsmshowtemp.fsm'
+	fsmtemplatename = sshdevicetype + '_fsmshowtemp_health.fsm'
 	if not os.path.isfile(fsmtemplatename):
 		urllib.urlretrieve(fsmshowtempurl, fsmtemplatename)
 	fsmtemplatenamefile = open(fsmtemplatename)
@@ -1219,10 +1239,10 @@ def DEF_HEALTHCHECK(sshdevice):
 				pass
 		try:
 			if not sshnet_connect:
-				thread.exit()
+				sys.exit()
 		except:
 			print 'Error with connecting to ' + sshdeviceip
-			thread.exit()
+			sys.exit()
 		sshdevicehostname = sshnet_connect.find_prompt()
 		sshdevicehostname = sshdevicehostname.strip('#')
 		if '>' in sshdevicehostname:
@@ -1308,7 +1328,7 @@ def DEF_HEALTHCHECK(sshdevice):
 					healthcheckcsv.append ((sshdevicehostname + ',' + hcerror + ',' + hcdescription))
 		#Show Temperature
 		try:
-			if not 'nxos' in sshdevicetype:
+			if sshdevicetype.lower() == 'cisco_ios' or sshdevicetype.lower() == 'cisco_xe':
 				sshcommand = showtemp
 				sshresult = sshnet_connect.send_command(sshcommand)
 				hcshowtemp = fsmtemptemplate.ParseText(sshresult)
@@ -1320,7 +1340,7 @@ def DEF_HEALTHCHECK(sshdevice):
 					hcerror = 'Temperature Alert'
 					hcdescription = 'Temperature has been recorded at ' + hctempdegrees + ' Celsius. Please lower the temperature for the surrounding environment '
 					healthcheckcsv.append ((sshdevicehostname + ',' + hcerror + ',' + hcdescription))
-			else:
+			if sshdevicetype.lower() == 'cisco_nxos':
 				sshcommand = showtemp_nxos
 				sshresult = sshnet_connect.send_command(sshcommand)
 				hcshowtemp = fsmtemptemplate.ParseText(sshresult)
@@ -1369,7 +1389,7 @@ def DEF_HEALTHCHECK(sshdevice):
 	print 'Completed health check for ' + sshdeviceip
 	try:
 		sshnet_connect.disconnect()
-		thread.exit()
+		sys.exit()
 	except:
 		pass
 
@@ -1407,10 +1427,10 @@ def DEF_CDPDISCOVERY(sshusername,sshpassword,enablesecret,cdpseedv,cdpdevicetype
 			pass
 	try:
 		if not sshnet_connect:
-			thread.exit()
+			sys.exit()
 	except:
 		print 'Error with connecting to ' + sshdeviceip
-		thread.exit()
+		sys.exit()
 	sshdevicehostname = sshnet_connect.find_prompt()
 	sshdevicehostname = sshdevicehostname.strip('#')
 	if '>' in sshdevicehostname:
@@ -1507,10 +1527,10 @@ def DEF_CDPDISCOVERY(sshusername,sshpassword,enablesecret,cdpseedv,cdpdevicetype
 					pass
 			try:
 				if not sshnet_connect:
-					thread.exit()
+					sys.exit()
 			except:
 				print 'Error with connecting to ' + sshdeviceip
-				thread.exit()				
+				sys.exit()				
 			sshdevicehostname = sshnet_connect.find_prompt()
 			sshdevicehostname = sshdevicehostname.strip('#')
 			if '>' in sshdevicehostname:
@@ -1631,6 +1651,7 @@ if __name__ == "__main__":
 		for row in mnetcatalog:
 			try:
 				# Point based system to match devices
+				skipimport = 0
 				ciscopoints = 0
 				hppoints = 0
 				if row[1] == '':
@@ -1645,12 +1666,11 @@ if __name__ == "__main__":
 				if re.match(hpproductreg, row[2]):
 					hppoints = hppoints + 5
 				# Check point total for Cisco match
-				print row[1]
-				print ciscopoints
-				print hppoints
-				if ciscopoints > 4:
+				if ciscopoints > 4 and ciscopoints > hppoints:
 					snmpdiscoverylist = {}
 					snmpdeviceip = snmpdiscoverylist['Device IPs'] = row[1]
+					if not IP_ADDRESS.match(snmpdeviceip):
+						skipimport = 1
 					snmpdiscoverylist['Device IPs'] = snmpdeviceip
 					snmpdiscoverylist['Vendor'] = 'Cisco'
 					# Check for device type logic
@@ -1668,19 +1688,18 @@ if __name__ == "__main__":
 								snmpduplicate = 1
 						except:
 							pass
-					if snmpduplicate == 0:
+					if snmpduplicate == 0 and skipimport == 0:
 						sshdevices.append(snmpdiscoverylist)
 					continue
-				if hppoints > 4:
+				if hppoints > 4 and hppoints > ciscopoints:
 					snmpdiscoverylist = {}
 					snmpdeviceip = snmpdiscoverylist['Device IPs'] = row[1]
+					if not IP_ADDRESS.match(snmpdeviceip):
+						skipimport = 1
 					snmpdiscoverylist['Device IPs'] = snmpdeviceip
 					snmpdiscoverylist['Vendor'] = 'HP'
 					# Check for device type logic
-					if any(word in row[3] for word in hpprocurveoslist):
-						snmpdiscoverydevicetype = 'procurve'
-					if any(word in row[3] for word in hpcomwareoslist):
-						snmpdiscoverydevicetype = 'comware'
+					snmpdiscoverydevicetype = 'procurve'
 					snmpdiscoverylist['Type'] = snmpdiscoverydevicetype
 					snmpduplicate = 0
 					for sshdevice in sshdevices:
@@ -1689,7 +1708,7 @@ if __name__ == "__main__":
 								snmpduplicate = 1
 						except:
 							pass
-					if snmpduplicate == 0:
+					if snmpduplicate == 0 and skipimport == 0:
 						sshdevices.append(snmpdiscoverylist)
 					continue
 			except:
@@ -1906,6 +1925,9 @@ try:
 				fortygeint = fortygeint + 1
 			if '10/25/50/100' in subrow.get('Type') and int_hostname == subrow.get('Hostname'):
 				hundredgeint = hundredgeint + 1
+			if '--' in subrow.get('Type') and int_hostname == subrow.get('Hostname') and 'Eth' in subrow.get('Interface'):
+				# Assume 10gb for Nexus
+				tengeint = tengeint + 1
 			if '10/40/100' in subrow.get('Type') and int_hostname == subrow.get('Hostname'):
 				hundredgeint = hundredgeint + 1
 			for subrow1 in poeinterfacelist:

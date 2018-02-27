@@ -18,8 +18,8 @@ Start
   ^admin\s+state\s+is\s+${ADMIN_STATE},
   ^\s+Hardware(:|\s+is)\s+${HARDWARE_TYPE},\s+address(:|\s+is)\s+${ADDRESS}(.*bia\s+${BIA})*
   ^\s+${DUPLEX}, ${SPEED}(,|$$)
-  ^\s+${INPUT_ERRORS} input errors -> Continue
-  ^.*${CRC_ERRORS} CRC
-  ^\s+${OUTPUT_ERRORS} output errors -> Continue
-  ^.*${COLLISION} collision
-  ^${INTERFACE_RESETS} interface resets  -> Record
+  ^\s+${INTERFACE_RESETS} interface resets  
+  ^.*${CRC_ERRORS} CRC\S+
+  ^\s+${INPUT_ERRORS} input error
+  ^\s+${OUTPUT_ERRORS} output error -> Continue
+  ^.*${COLLISION} late collision -> Record
