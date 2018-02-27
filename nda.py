@@ -1733,9 +1733,13 @@ if __name__ == "__main__":
 	# Start Threads
 	for sshdevice in sshdevices:	
 		sshdeviceip = sshdevice.get('Device IPs').encode('utf-8')
-		print "Spawning Thread for " + sshdeviceip
-		t = threading.Thread(target=DEF_STARTALLTESTS, args=(sshdevice,))
-		t.start()
+		sshdevicetype = sshdevice.get('Type').encode('utf-8')
+		# Run Cisco Tests
+		if 'ios' in sshdevicetype.lower() or 'xe' in sshdevicetype.lower() or 'nxos' in sshdevicetype.lower():
+			print "Spawning Thread for " + sshdeviceip
+			t = threading.Thread(target=DEF_STARTALLTESTS, args=(sshdevice,))
+			t.start()
+			time.sleep(1)
 	main_thread = threading.currentThread()
 	for it_thread in threading.enumerate():
 		if it_thread != main_thread:
