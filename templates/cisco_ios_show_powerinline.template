@@ -2,7 +2,7 @@ Value Required INT (\S+)
 Value Required ADMIN (\S+)
 Value Required OPER (off|on)
 Value Required POW (\d+.\d+)
-Value Required DEVICE (\S+)
+Value DEVICE (\S+\s?\S+?\s?\S+?)
 Value Required CLASS (1|2|3|4|5|n/a)
 Value Required MAXPOE (\d+.\d+)
 

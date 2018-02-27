@@ -1156,8 +1156,12 @@ def DEF_GATHERDATA(sshdevice):
 			DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)	
 		#Show Temperature
 		if temperature == 1:
-			sshcommand = showtemp
-			sshresult = sshnet_connect.send_command(sshcommand)
+			if sshdevicetype.lower() == 'cisco_ios' or sshdevicetype.lower() == 'cisco_xe':
+				sshcommand = showtemp
+				sshresult = sshnet_connect.send_command(sshcommand)
+			if sshdevicetype.lower() == 'cisco_nxos':
+				sshcommand = showtemp_nxos
+				sshresult = sshnet_connect.send_command(sshcommand)
 			if not 'invalid' in sshresult:
 				DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)
 		print 'Completed device information gathering for ' + sshdeviceip
@@ -1739,7 +1743,7 @@ if __name__ == "__main__":
 			print "Spawning Thread for " + sshdeviceip
 			t = threading.Thread(target=DEF_STARTALLTESTS, args=(sshdevice,))
 			t.start()
-			time.sleep(1)
+			time.sleep(10)
 	main_thread = threading.currentThread()
 	for it_thread in threading.enumerate():
 		if it_thread != main_thread:
@@ -1844,12 +1848,10 @@ try:
 					macint = temprow.get('Interface')
 					machost = temprow.get('Hostname')
 			# Bug Fix - Somehow some interfaces were being missed (showing 100000 mac), finding interface match from earlier and matching on that
-			'''
 			if maccount == 100000:
 				for temprow in mactablelist:
 					if macint == temprow.get('Interface'):
 						maccount = temprow.get('Count')
-			'''
 			tempdict['Source Device'] = machost
 			tempdict['Interface'] = macint
 			tempdict['MAC Count on Interface'] = maccount
@@ -1929,14 +1931,14 @@ try:
 				fortygeint = fortygeint + 1
 			if '10/25/50/100' in subrow.get('Type') and int_hostname == subrow.get('Hostname'):
 				hundredgeint = hundredgeint + 1
-			if '--' in subrow.get('Type') and int_hostname == subrow.get('Hostname') and 'Eth' in subrow.get('Interface'):
-				# Assume 10gb for Nexus
+			if '10GB' in subrow.get('Type'):
 				tengeint = tengeint + 1
 			if '10/40/100' in subrow.get('Type') and int_hostname == subrow.get('Hostname'):
 				hundredgeint = hundredgeint + 1
-			for subrow1 in poeinterfacelist:
-				if subrow.get('Interface') == subrow1.get('Interface') and Decimal(subrow1.get('Power Usage')) > 0 and subrow.get('Hostname') == subrow1.get('Hostname'):
-					poeint = poeint + 1
+			if subrow.get('Hostname') == subrow1.get('Hostname'):
+				for subrow1 in poeinterfacelist:
+					if subrow.get('Interface') == subrow1.get('Interface') and Decimal(subrow1.get('Power Usage')) > 0:
+						poeint = poeint + 1
 		# Get Hostname and populate
 		ws1['A' + str(startrow)] = int_hostname
 		ws1['B' + str(startrow)] = faint
