@@ -1761,7 +1761,7 @@ try:
 	ws1.append(['Hostname','Product ID','Serial Number','Stack Number','Manufacture Date','Version','Description'])
 	startrow = 2
 	for row in fullinventorylist:
-		if 'chassis' in row.get('Description').lower():
+		if 'chassis' in row.get('Description').lower() and not 'fan' in row.get('Description').lower():
 			# Attempt to find the age of the device
 			try:
 				age_base = 1996
@@ -1785,7 +1785,7 @@ try:
 	ws2.append(['Hostname','Product ID','Serial Number','Description'])
 	startrow = 2
 	for row in fullinventorylist:
-		if not 'chassis' in row.get('Description').lower():
+		if not 'chassis' in row.get('Description').lower() or 'fan' in row.get('Description').lower():
 			ws2['A' + str(startrow)] = row.get('Hostname')
 			ws2['B' + str(startrow)] = row.get('Product ID')
 			ws2['C' + str(startrow)] = row.get('Serial Number')
@@ -1823,7 +1823,7 @@ try:
 		tempdict = {}
 		tempdict['IP Address'] = row.get('IP Address')
 		tempdict['MAC'] = row.get('MAC')
-		mac_company_mac = (row.get('MAC')[0:8])
+		mac_company_mac = row.get('MAC')[0:7].replace('.','')
 		# Get a vendor mac address and add to the table
 		if skipmac == 0:
 			try:
