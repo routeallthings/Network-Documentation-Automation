@@ -89,8 +89,9 @@ except ImportError:
 		os.system('python -m pip install openpyxl')
 		from openpyxl import load_workbook
 		from openpyxl import workbook
+		from openpyxl import Workbook
 	else:
-		print 'You selected an option other than yes. Please be aware that this script requires the use of Pandas. Please install manually and retry'
+		print 'You selected an option other than yes. Please be aware that this script requires the use of openpyxl. Please install manually and retry'
 		sys.exit()
 
 # XLSX import
