@@ -1411,7 +1411,7 @@ def DEF_HEALTHCHECK(sshdevice):
 	except:
 		pass
 
-def DEF_CDPDISCOVERY(sshusername,sshpassword,enablesecret,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv):
+def DEF_CDPDISCOVERY(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv):
 	# Create Commands
 	showcdp = "show cdp neighbor detail"
 	# FSM Templates
@@ -1511,7 +1511,7 @@ def DEF_CDPDISCOVERY(sshusername,sshpassword,enablesecret,cdpseedv,cdpdevicetype
 				'''Nothing'''
 		
 	# Attempt Subsequent Discovery Levels (Non-Threaded)
-	def DEF_CDPDISCOVERYSUB(sshusername,sshpassword,enablesecret,cdpip,cdpvendor,cdptype):
+	def DEF_CDPDISCOVERYSUB(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv):
 		try:
 			# FSM Templates
 			cdpdevicetype = cdpvendor.lower() + '_' + cdptype.lower()
@@ -1644,7 +1644,7 @@ if __name__ == "__main__":
 		except:
 			pass
 	# Get Devices from CDP and check to ignore duplicates imported from XLSX
-	if devicediscoveryv == 1 or not 'na' in deviceseedv.lower():
+	if devicediscoveryv == 1 and not 'na' in devicediscoveryseedv.lower():
 		# SNMP Section
 		graph = mnetsuite_routeallthings.mnet_graph()
 		opt_dot = None
@@ -1732,22 +1732,22 @@ if __name__ == "__main__":
 			except:
 				pass
 		mnetcatfile.close()
-		# SSH Section
-		if devicediscoverysshv == 1:
-			print 'Starting SSH CDP Discovery'
-			DEF_CDPDISCOVERY(usernamelist,devicediscoveryseedv,devicediscoverytypev,devicediscoverydepthv)
-			if cdpdevicecomplete:
-				for cdpdevice in cdpdevicecomplete:
-					cdpduplicate = 0
-					cdpdeviceip = cdpdevice.get('Device IPs').encode('utf-8')
-					for sshdevice in sshdevices:
-						try:
-							if cdpdeviceip == sshdevice.get('Device IPs').encode('utf-8'):
-								cdpduplicate = 1
-						except:
-							pass
-					if cdpduplicate == 0:
-						sshdevices.append(cdpdevice)
+	# SSH Section
+	if devicediscoverysshv == 1:
+		print 'Starting SSH CDP Discovery'
+		DEF_CDPDISCOVERY(usernamelist,devicediscoveryseedv,devicediscoverysshtypev,devicediscoverydepthv)
+		if cdpdevicecomplete:
+			for cdpdevice in cdpdevicecomplete:
+				cdpduplicate = 0
+				cdpdeviceip = cdpdevice.get('Device IPs').encode('utf-8')
+				for sshdevice in sshdevices:
+					try:
+						if cdpdeviceip == sshdevice.get('Device IPs').encode('utf-8'):
+							cdpduplicate = 1
+					except:
+						pass
+				if cdpduplicate == 0:
+					sshdevices.append(cdpdevice)
 	# Start Threads
 	for sshdevice in sshdevices:	
 		sshdeviceip = sshdevice.get('Device IPs').encode('utf-8')
