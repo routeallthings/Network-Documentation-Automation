@@ -161,6 +161,19 @@ except ImportError:
 	else:
 		print 'You selected an option other than yes. Please be aware that this script requires the use of graphviz. Please install manually and retry'
 		sys.exit()
+		
+# Requests
+
+try:
+	import requests
+except ImportError:
+	requestsinstallstatus = fullpath = raw_input ('requests module is missing, would you like to automatically install? (Y/N): ')
+	if 'y' in graphvizinstallstatus.lower():
+		os.system('python -m pip install requests')
+		import requests
+	else:
+		print 'You selected an option other than yes. Please be aware that this script requires the use of requests. Please install manually and retry'
+		sys.exit()
 
 '''Global Variables'''
 ipv4_address = re.compile('((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)')
@@ -1806,6 +1819,7 @@ try:
 	# Create ARP report by looking for closest hop interface
 	skiparpreport = 0
 	# Preload MAC DB
+	'''
 	try:
 		maclookupfilename = 'oui.txt'
 		tempfilelist.append(maclookupfilename)
@@ -1818,20 +1832,28 @@ try:
 	except Exception as e:
 		skipmac = 1
 		print 'Could not load MAC database. Error is ' + str(e)
+	'''
 	# Start processing data
 	for row in ipmactablelist:
 		tempdict = {}
 		tempdict['IP Address'] = row.get('IP Address')
 		tempdict['MAC'] = row.get('MAC')
+		'''
 		mac_company_mac = row.get('MAC')[0:7].replace('.','')
+		'''
 		# Get a vendor mac address and add to the table
 		if skipmac == 0:
 			try:
+				r = requests.get(maclookupurl % row.get('MAC'))
+				maccompany = r.json()
+				maccompany = maccompany.get('result').get('company')
+				'''
 				for line in maclookupdb:
 					if line.startswith(mac_company_mac):
 						maccompany = (re.search(r'^(([A-Z0-9]{2}[-]){2}[A-Z0-9]{2}.*\(hex\)\s+)(.*)',line)).group(3)
 					if maccompany == '':
 						maccompany = 'Unknown'
+				'''
 			except:
 				maccompany = 'Unknown'
 		tempdict['MAC Manufacturer'] = maccompany
