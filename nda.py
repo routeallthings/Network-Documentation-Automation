@@ -1935,8 +1935,8 @@ try:
 				tengeint = tengeint + 1
 			if '10/40/100' in subrow.get('Type') and int_hostname == subrow.get('Hostname'):
 				hundredgeint = hundredgeint + 1
-			if subrow.get('Hostname') == subrow1.get('Hostname'):
-				for subrow1 in poeinterfacelist:
+			for subrow1 in poeinterfacelist:
+				if subrow1.get('Hostname') == int_hostname and subrow.get('Hostname') == int_hostname:
 					if subrow.get('Interface') == subrow1.get('Interface') and Decimal(subrow1.get('Power Usage')) > 0:
 						poeint = poeint + 1
 		# Get Hostname and populate
