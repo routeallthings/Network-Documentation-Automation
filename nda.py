@@ -544,7 +544,7 @@ def DEF_GATHERDATA(sshdevice):
 			fsmshowinvurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_inventory.template"
 		fsmtemplatename = sshdevicetype.lower() + '_fsmshowinventory.fsm'
 		if not os.path.isfile(fsmtemplatename):
-			urllib.urlretrieve(fsmshowinvurl, fsmtemplatename)
+			DOWNLOAD_FILE(fsmshowinvurl, fsmtemplatename)
 		fsmtemplatenamefile = open(fsmtemplatename)
 		fsminvtemplate = textfsm.TextFSM(fsmtemplatenamefile)
 		tempfilelist.append(fsmtemplatename)
@@ -558,7 +558,7 @@ def DEF_GATHERDATA(sshdevice):
 			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_iparp.template"
 		fsmtemplatename = sshdevicetype.lower() + '_fsmiparptable.fsm'
 		if not os.path.isfile(fsmtemplatename):
-			urllib.urlretrieve(fsmshowurl, fsmtemplatename)
+			DOWNLOAD_FILE(fsmshowurl, fsmtemplatename)
 		fsmtemplatenamefile = open(fsmtemplatename)
 		fsmarptemplate = textfsm.TextFSM(fsmtemplatenamefile)
 		tempfilelist.append(fsmtemplatename)
@@ -572,7 +572,7 @@ def DEF_GATHERDATA(sshdevice):
 			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_mac.template"
 		fsmtemplatename = sshdevicetype.lower() + '_fsmmactable.fsm'
 		if not os.path.isfile(fsmtemplatename):
-			urllib.urlretrieve(fsmshowurl, fsmtemplatename)
+			DOWNLOAD_FILE(fsmshowurl, fsmtemplatename)
 		fsmtemplatenamefile = open(fsmtemplatename)
 		fsmmactemplate = textfsm.TextFSM(fsmtemplatenamefile)
 		tempfilelist.append(fsmtemplatename)
@@ -586,7 +586,7 @@ def DEF_GATHERDATA(sshdevice):
 			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_version.template"
 		fsmtemplatename = sshdevicetype.lower() + '_fsmversion.fsm'
 		if not os.path.isfile(fsmtemplatename):
-			urllib.urlretrieve(fsmshowurl, fsmtemplatename)
+			DOWNLOAD_FILE(fsmshowurl, fsmtemplatename)
 		fsmtemplatenamefile = open(fsmtemplatename)
 		fsmvertemplate = textfsm.TextFSM(fsmtemplatenamefile)
 		tempfilelist.append(fsmtemplatenamefile)
@@ -600,7 +600,7 @@ def DEF_GATHERDATA(sshdevice):
 			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_interface_stat.template"
 		fsmtemplatename = sshdevicetype.lower() + '_fsminterfacestat.fsm'
 		if not os.path.isfile(fsmtemplatename):
-			urllib.urlretrieve(fsmshowurl, fsmtemplatename)
+			DOWNLOAD_FILE(fsmshowurl, fsmtemplatename)
 		fsmtemplatenamefile = open(fsmtemplatename)
 		fsmintstattemplate = textfsm.TextFSM(fsmtemplatenamefile)
 		tempfilelist.append(fsmtemplatenamefile)
@@ -614,7 +614,7 @@ def DEF_GATHERDATA(sshdevice):
 			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_enviroment_power.template"
 		fsmtemplatename = sshdevicetype.lower() + '_fsmpowerinline.fsm'
 		if not os.path.isfile(fsmtemplatename):
-			urllib.urlretrieve(fsmshowurl, fsmtemplatename)
+			DOWNLOAD_FILE(fsmshowurl, fsmtemplatename)
 		fsmtemplatenamefile = open(fsmtemplatename)
 		fsmpoeporttemplate = textfsm.TextFSM(fsmtemplatenamefile)
 		tempfilelist.append(fsmtemplatenamefile)
@@ -628,7 +628,7 @@ def DEF_GATHERDATA(sshdevice):
 			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_ipintbr.template"
 		fsmtemplatename = sshdevicetype.lower() + '_fsmipintbr.fsm'
 		if not os.path.isfile(fsmtemplatename):
-			urllib.urlretrieve(fsmshowurl, fsmtemplatename)
+			DOWNLOAD_FILE(fsmshowurl, fsmtemplatename)
 		fsmtemplatenamefile = open(fsmtemplatename)
 		fsmipintbrtemplate = textfsm.TextFSM(fsmtemplatenamefile)
 		tempfilelist.append(fsmtemplatenamefile)
@@ -638,7 +638,7 @@ def DEF_GATHERDATA(sshdevice):
 			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_inttrans.template"
 			fsmtemplatename = sshdevicetype.lower() + '_fsminttrans.fsm'
 			if not os.path.isfile(fsmtemplatename):
-				urllib.urlretrieve(fsmshowurl, fsmtemplatename)
+				DOWNLOAD_FILE(fsmshowurl, fsmtemplatename)
 			fsmtemplatenamefile = open(fsmtemplatename)
 			fsminttranstemplate = textfsm.TextFSM(fsmtemplatenamefile)
 			tempfilelist.append(fsmtemplatenamefile)
@@ -1225,7 +1225,7 @@ def DEF_HEALTHCHECK(sshdevice):
 		fsmshowinturl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_interfaces_health.template"
 	fsmtemplatename = sshdevicetype + '_fsmshowint_health.fsm'
 	if not os.path.isfile(fsmtemplatename):
-		urllib.urlretrieve(fsmshowinturl, fsmtemplatename)
+		DOWNLOAD_FILE(fsmshowinturl, fsmtemplatename)
 	fsmtemplatenamefile = open(fsmtemplatename)
 	fsminttemplate = textfsm.TextFSM(fsmtemplatenamefile)
 	tempfilelist.append(fsmtemplatename)
@@ -1239,7 +1239,7 @@ def DEF_HEALTHCHECK(sshdevice):
 		fsmshowtempurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_temp_health.template"	
 	fsmtemplatename = sshdevicetype + '_fsmshowtemp_health.fsm'
 	if not os.path.isfile(fsmtemplatename):
-		urllib.urlretrieve(fsmshowtempurl, fsmtemplatename)
+		DOWNLOAD_FILE(fsmshowtempurl, fsmtemplatename)
 	fsmtemplatenamefile = open(fsmtemplatename)
 	fsmtemptemplate = textfsm.TextFSM(fsmtemplatenamefile)
 	tempfilelist.append(fsmtemplatename)
@@ -1431,7 +1431,7 @@ def DEF_CDPDISCOVERY(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv):
 		fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_cdp_nei_detail.template"
 	fsmtemplatename = cdpdevicetypev.lower() + '_fsmshowcdp.fsm'
 	if not os.path.isfile(fsmtemplatename):
-		urllib.urlretrieve(fsmshowcdpurl, fsmtemplatename)
+		DOWNLOAD_FILE(fsmshowcdpurl, fsmtemplatename)
 	fsmtemplatenamefile = open(fsmtemplatename)
 	fsmcdptemplate = textfsm.TextFSM(fsmtemplatenamefile)
 	tempfilelist.append(fsmtemplatenamefile)
@@ -1531,7 +1531,7 @@ def DEF_CDPDISCOVERY(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv):
 				fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_cdp_nei_detail.template"
 			fsmtemplatename = cdpdevicetype.lower() + '_fsmshowcdp.fsm'
 			if not os.path.isfile(fsmtemplatename):
-				urllib.urlretrieve(fsmshowcdpurl, fsmtemplatename)
+				DOWNLOAD_FILE(fsmshowcdpurl, fsmtemplatename)
 			fsmtemplatenamefile = open(fsmtemplatename)
 			fsmcdptemplate = textfsm.TextFSM(fsmtemplatenamefile)
 			tempfilelist.append(fsmtemplatenamefile)
@@ -1833,7 +1833,7 @@ try:
 		maclookupfilename = 'oui.txt'
 		tempfilelist.append(maclookupfilename)
 		if not os.path.isfile(maclookupfilename):
-			urllib.urlretrieve(maclookupdburl, maclookupfilename)
+			DOWNLOAD_FILE(maclookupdburl, maclookupfilename)
 		maclookupdbo = open(maclookupfilename)
 		maclookupdb = maclookupdbo.readlines()
 		maclookupdbo.close()
