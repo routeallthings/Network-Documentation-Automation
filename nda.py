@@ -1853,20 +1853,19 @@ try:
 		mac_company_mac = row.get('MAC')[0:7].replace('.','')
 		'''
 		# Get a vendor mac address and add to the table
-		if skipmac == 0:
-			try:
-				r = requests.get(maclookupurl % row.get('MAC'))
-				maccompany = r.json()
-				maccompany = maccompany.get('result').get('company')
-				'''
-				for line in maclookupdb:
-					if line.startswith(mac_company_mac):
-						maccompany = (re.search(r'^(([A-Z0-9]{2}[-]){2}[A-Z0-9]{2}.*\(hex\)\s+)(.*)',line)).group(3)
-					if maccompany == '':
-						maccompany = 'Unknown'
-				'''
-			except:
-				maccompany = 'Unknown'
+		try:
+			r = requests.get(maclookupurl % row.get('MAC'))
+			maccompany = r.json()
+			maccompany = maccompany.get('result').get('company')
+			'''
+			for line in maclookupdb:
+				if line.startswith(mac_company_mac):
+					maccompany = (re.search(r'^(([A-Z0-9]{2}[-]){2}[A-Z0-9]{2}.*\(hex\)\s+)(.*)',line)).group(3)
+				if maccompany == '':
+					maccompany = 'Unknown'
+			'''
+		except:
+			maccompany = 'Unknown'
 		tempdict['MAC Manufacturer'] = maccompany
 		if '-' in row.get('Age'):
 			tempdict['Source Device'] = row.get('Hostname')
@@ -1905,15 +1904,12 @@ try:
 	startrow = 2
 	for row in mactablelist:
 		# Get Manufacturer of MAC
-		if skipmac == 0:
-			try:
-				for line in maclookupdb:
-					if line.startswith(mac_company_mac):
-						maccompany = (re.search(r'^(([A-Z0-9]{2}[-]){2}[A-Z0-9]{2}.*\(hex\)\s+)(.*)',line)).group(3)
-					if maccompany == '':
-						maccompany = 'Unknown'
-			except:
-				maccompany = 'Unknown'
+		try:
+			r = requests.get(maclookupurl % row.get('MAC'))
+			maccompany = r.json()
+			maccompany = maccompany.get('result').get('company')
+		except:
+			maccompany = 'Unknown'
 		# Append to Workbook
 		ws2['A' + str(startrow)] = row.get('Hostname')
 		ws2['B' + str(startrow)] = row.get('MAC')
