@@ -1779,25 +1779,24 @@ if __name__ == "__main__":
 	'''		
 ################################ EXPORTING REPORTS ################################
 print 'Exporting Informational Reports'
-#
-# Header Cell Styles
+
+
+# Report Style
 HeaderFont = Font(bold=True)
 HeaderFont.size = 12
 HeaderStyle = NamedStyle(name='BoldHeader')
 HeaderStyle.font = HeaderFont
-
+	
 ### Full Inventory ###
 try:
+
+	# Start Report
 	wb = Workbook()
-	wb.add_named_style(HeaderStyle)
 	dest_filename = 'Full-Inventory.xlsx'
 	dest_path = exportlocation + '\\' + dest_filename
 	ws1 = wb.active
 	ws1.title = "Device Inventory"
 	ws1.append(['Hostname','Product ID','Serial Number','Stack Number','Manufacture Date','Version','Description'])
-	# Set styles on header row
-	for cell in ws1["1:1"]:
-		cell.style = 'BoldHeader'
 	# Continue on with work
 	startrow = 2
 	for row in fullinventorylist:
@@ -1821,10 +1820,8 @@ try:
 			ws1['F' + str(startrow)] = row.get('Version')
 			ws1['G' + str(startrow)] = row.get('Description')
 			startrow = startrow + 1
+	# Start Secondary Tab
 	ws2 = wb.create_sheet(title="Module Inventory")
-	# Set styles on header row
-	for cell in ws2["1:1"]:
-		cell.style = 'BoldHeader'
 	# Continue on with work
 	ws2.append(['Hostname','Product ID','Serial Number','Description'])
 	startrow = 2
@@ -1835,6 +1832,12 @@ try:
 			ws2['C' + str(startrow)] = row.get('Serial Number')
 			ws2['D' + str(startrow)] = row.get('Description')
 			startrow = startrow + 1
+	wb.add_named_style(HeaderStyle)
+	# Set styles on header row
+	for cell in ws1["1:1"]:
+		cell.style = 'BoldHeader'
+	for cell in ws2["1:1"]:
+		cell.style = 'BoldHeader'
 	wb.save(filename = dest_path)
 	print 'Successfully created Full Inventory Report'
 except Exception as e:
@@ -1842,13 +1845,9 @@ except Exception as e:
 #### MAC and ARP Report ###
 try:
 	wb = Workbook()
-	wb.add_named_style(HeaderStyle)
 	dest_filename = 'ARP-MAC-Report.xlsx'
 	dest_path = exportlocation + '\\' + dest_filename
 	ws1 = wb.active
-	# Set styles on header row
-	for cell in ws1["1:1"]:
-		cell.style = 'BoldHeader'
 	# Continue on with work
 	ws1.title = "ARP Report"
 	ws1.append(['IP Address','MAC','Manufacturer','Source Device','Inteface','MAC Count on Interface'])
@@ -1871,6 +1870,7 @@ try:
 	for row in ipmactablelist:
 		tempdict = {}
 		tempdict['IP Address'] = row.get('IP Address')
+		tempdict['MAC'] = row.get('MAC')
 		maccompany = ''
 		mac_company_mac = str(row.get('MAC')[0:7].replace('.','')).upper()
 		# Get a vendor mac address and add to the table
@@ -1917,9 +1917,6 @@ try:
 		startrow = startrow + 1
 	# Change worksheet
 	ws2 = wb.create_sheet(title="MAC")
-	# Set styles on header row
-	for cell in ws2["1:1"]:
-		cell.style = 'BoldHeader'
 	# Continue on with work
 	ws2.append(['Hostname','MAC','Manufacturer','VLAN','Interface'])
 	startrow = 2
@@ -1944,6 +1941,12 @@ try:
 		ws2['D' + str(startrow)] = row.get('VLAN')
 		ws2['E' + str(startrow)] = row.get('Interface')
 		startrow = startrow + 1
+	wb.add_named_style(HeaderStyle)
+	# Set styles on header row
+	for cell in ws1["1:1"]:
+		cell.style = 'BoldHeader'
+	for cell in ws2["1:1"]:
+		cell.style = 'BoldHeader'
 	# Save workbook
 	wb.save(filename = dest_path)
 	print 'Successfully created ARP/MAC Report'
@@ -1952,13 +1955,9 @@ except Exception as e:
 ### Interface Report ###
 try:
 	wb = Workbook()
-	wb.add_named_style(HeaderStyle)
 	dest_filename = 'Interface-Report.xlsx'
 	dest_path = exportlocation + '\\' + dest_filename
 	ws1 = wb.active
-	# Set styles on header row
-	for cell in ws1["1:1"]:
-		cell.style = 'BoldHeader'
 	# Continue on with work
 	ws1.title = "Interface Overview"
 	ws1.append(['Hostname','100Mb','1Gb','10gb','40gb','100gb','POE'])
@@ -2011,9 +2010,6 @@ try:
 		startrow = startrow + 1
 	try:
 		ws2 = wb.create_sheet(title="L2 Interfaces")
-		# Set styles on header row
-		for cell in ws2["1:1"]:
-			cell.style = 'BoldHeader'
 		# Continue on with work
 		ws2.append(['Hostname','Interface','Type','Status','Speed','Duplex','VLAN','POE'])
 		startrow = 2
@@ -2037,9 +2033,6 @@ try:
 		print 'Error creating L2 Interface Report. Error is ' + str(e)	
 	try:
 		ws3 = wb.create_sheet(title="L3 Interfaces")
-		# Set styles on header row
-		for cell in ws3["1:1"]:
-			cell.style = 'BoldHeader'
 		# Continue on with work
 		ws3.append(['Hostname','Interface','IP Address'])
 		startrow = 2
@@ -2051,6 +2044,14 @@ try:
 				startrow = startrow + 1
 	except Exception as e:
 		print 'Error creating L3 Interface Report. Error is ' + str(e)	
+	wb.add_named_style(HeaderStyle)
+	# Set styles on header row
+	for cell in ws1["1:1"]:
+		cell.style = 'BoldHeader'
+	for cell in ws2["1:1"]:
+		cell.style = 'BoldHeader'
+	for cell in ws3["1:1"]:
+		cell.style = 'BoldHeader'
 	wb.save(filename = dest_path)
 	print 'Successfully created Interface Report'
 except Exception as e:
@@ -2058,13 +2059,9 @@ except Exception as e:
 ### POE Report ###
 try:
 	wb = Workbook()
-	wb.add_named_style(HeaderStyle)
 	dest_filename = 'POE-Report.xlsx'
 	dest_path = exportlocation + '\\' + dest_filename
 	ws1 = wb.active
-	# Set styles on header row
-	for cell in ws1["1:1"]:
-		cell.style = 'BoldHeader'
 	# Continue on with work
 	ws1.title = "POE Interfaces"
 	ws1.append(['Hostname','Interface','Admin Status','Operational Status','Power Usage','Device Name','Device Class','Max POE Capability'])
@@ -2081,6 +2078,11 @@ try:
 			ws1['G' + str(startrow)] = row.get('Device Class')
 			ws1['H' + str(startrow)] = row.get('Max POE Capability')
 			startrow = startrow + 1
+	wb.add_named_style(HeaderStyle)
+	# Set styles on header row
+	for cell in ws1["1:1"]:
+		cell.style = 'BoldHeader'
+	wb.save(filename = dest_path)
 	wb.save(filename = dest_path)
 	print 'Successfully created POE Report'
 except Exception as e:
@@ -2092,13 +2094,9 @@ try:
 	if healthcheckv == 1:
 		print 'Exporting Health Reports'
 		wb = Workbook()
-		wb.add_named_style(HeaderStyle)
 		dest_filename = 'Health-Check-Report.xlsx'
 		dest_path = exportlocation + '\\' + dest_filename
 		ws1 = wb.active
-		# Set styles on header row
-		for cell in ws1["1:1"]:
-			cell.style = 'BoldHeader'
 		# Continue on with work
 		ws1.title = "Health Check"
 		ws1.append(['Hostname','Error','Description'])
@@ -2107,7 +2105,11 @@ try:
 			ws1['A' + str(startrow)] = row.get('Hostname')
 			ws1['B' + str(startrow)] = row.get('Error')
 			ws1['C' + str(startrow)] = row.get('Description')
-			startrow = startrow + 1		
+			startrow = startrow + 1	
+		wb.add_named_style(HeaderStyle)
+		# Set styles on header row
+		for cell in ws1["1:1"]:
+			cell.style = 'BoldHeader'
 		wb.save(filename = dest_path)
 		print 'Successfully created Health Check Report'
 except Exception as e:
