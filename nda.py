@@ -44,12 +44,14 @@ paramiko_logger.addHandler(console_handler)
 try:
 	import requests
 except ImportError:
-	requestsinstallstatus = fullpath = raw_input ('request module is missing, would you like to automatically install? (Y/N): ')
+	requestsinstallstatus = raw_input ('request module is missing, would you like to automatically install? (Y/N): ')
 	if 'y' in requestsinstallstatus.lower():
 		os.system('python -m pip install requests')
 		import requests
 	else:
 		print "You selected an option other than yes. Please be aware that this script requires the use of requests. Please install manually and retry"
+		print 'Exiting in 5 seconds'
+		time.sleep(5)
 		sys.exit()
 
 # Used because its the best way to connect into the switches to pull out information (besides SNMP)
@@ -64,18 +66,22 @@ except ImportError:
 		from netmiko import ConnectHandler
 	else:
 		print "You selected an option other than yes. Please be aware that this script requires the use of netmiko. Please install manually and retry"
+		print 'Exiting in 5 seconds'
+		time.sleep(5)
 		sys.exit()
 
 # Used to parse through SSH output to get relevant data into tables for comparison and output
 try:
 	import textfsm
 except ImportError:
-	textfsminstallstatus = fullpath = raw_input ('textfsm module is missing, would you like to automatically install? (Y/N): ')
+	textfsminstallstatus = raw_input ('textfsm module is missing, would you like to automatically install? (Y/N): ')
 	if 'y' in textfsminstallstatus.lower():
 		os.system('python -m pip install textfsm')
 		import textfsm
 	else:
 		print "You selected an option other than yes. Please be aware that this script requires the use of textfsm. Please install manually and retry"
+		print 'Exiting in 5 seconds'
+		time.sleep(5)
 		sys.exit()
 
 # XLSX import
@@ -83,39 +89,33 @@ try:
 	from openpyxl import load_workbook
 	from openpyxl import workbook
 	from openpyxl import Workbook
+	from openpyxl.styles import Font, NamedStyle
 except ImportError:
-	openpyxlinstallstatus = fullpath = raw_input ('openpyxl module is missing, would you like to automatically install? (Y/N): ')
-	if 'Y' in openpyxlinstallstatus.lower():
+	openpyxlinstallstatus = raw_input ('openpyxl module is missing, would you like to automatically install? (Y/N): ')
+	if 'y' in openpyxlinstallstatus.lower():
 		os.system('python -m pip install openpyxl')
 		from openpyxl import load_workbook
 		from openpyxl import workbook
 		from openpyxl import Workbook
+		from openpyxl.styles import Font, NamedStyle
 	else:
 		print 'You selected an option other than yes. Please be aware that this script requires the use of openpyxl. Please install manually and retry'
+		print 'Exiting in 5 seconds'
+		time.sleep(5)
 		sys.exit()
 
 # XLSX import
 try:
 	import fileinput
 except ImportError:
-	fileinputnstallstatus = fullpath = raw_input ('FileInput module is missing, would you like to automatically install? (Y/N): ')
+	fileinputnstallstatus = raw_input ('FileInput module is missing, would you like to automatically install? (Y/N): ')
 	if 'y' in fileinputnstallstatus.lower():
 		os.system('python -m pip install FileInput')
 		import FileInput
 	else:
 		print 'You selected an option other than yes. Please be aware that this script requires the use of FileInput. Please install manually and retry'
-		sys.exit()
-
-# TextFSM download function
-try:
-	import urllib
-except ImportError:
-	urllibinstallstatus = fullpath = raw_input ('urllib module is missing, would you like to automatically install? (Y/N): ')
-	if 'y' in urllibinstallstatus.lower():
-		os.system('python -m pip install urllib')
-		import urllib
-	else:
-		print "You selected an option other than yes. Please be aware that this script requires the use of urllib. Please install manually and retry"
+		print 'Exiting in 5 seconds'
+		time.sleep(5)
 		sys.exit()
 
 # Darth-Veitcher Module https://github.com/darth-veitcher/xlhelper
@@ -127,12 +127,14 @@ from collections import OrderedDict
 try:
 	import xlhelper
 except ImportError:
-	xlhelperinstallstatus = fullpath = raw_input ('xlhelper module is missing, would you like to automatically install? (Y/N): ')
+	xlhelperinstallstatus = raw_input ('xlhelper module is missing, would you like to automatically install? (Y/N): ')
 	if 'y' in xlhelperinstallstatus.lower():
 		os.system('python -m pip install git+git://github.com/routeallthings/xlhelper.git')
 		import xlhelper
 	else:
 		print 'You selected an option other than yes. Please be aware that this script requires the use of xlhelper. Please install manually and retry'
+		print 'Exiting in 5 seconds'
+		time.sleep(5)
 		sys.exit()
 		
 
@@ -142,38 +144,14 @@ except ImportError:
 try:
 	import mnetsuite_routeallthings
 except ImportError:
-	mnetinstallstatus = fullpath = raw_input ('mnetsuite module (routeallthings variant) is missing, would you like to automatically install? (Y/N): ')
+	mnetinstallstatus = raw_input ('mnetsuite module (routeallthings variant) is missing, would you like to automatically install? (Y/N): ')
 	if 'y' in mnetinstallstatus.lower():
 		os.system('python -m pip install git+git://github.com/routeallthings/mnet_routeallthings.git')
 		import mnetsuite_routeallthings
 	else:
 		print 'You selected an option other than yes. Please be aware that this script requires the use of mnetsuite. Please install manually and retry'
-		sys.exit()
-		
-# Graphviz
-
-try:
-	from graphviz import Digraph
-except ImportError:
-	graphvizinstallstatus = fullpath = raw_input ('graphciz module is missing, would you like to automatically install? (Y/N): ')
-	if 'y' in graphvizinstallstatus.lower():
-		os.system('python -m pip install graphviz')
-		from graphviz import Digraph
-	else:
-		print 'You selected an option other than yes. Please be aware that this script requires the use of graphviz. Please install manually and retry'
-		sys.exit()
-		
-# Requests
-
-try:
-	import requests
-except ImportError:
-	requestsinstallstatus = fullpath = raw_input ('requests module is missing, would you like to automatically install? (Y/N): ')
-	if 'y' in graphvizinstallstatus.lower():
-		os.system('python -m pip install requests')
-		import requests
-	else:
-		print 'You selected an option other than yes. Please be aware that this script requires the use of requests. Please install manually and retry'
+		print 'Exiting in 5 seconds'
+		time.sleep(5)
 		sys.exit()
 
 '''Global Variables'''
@@ -271,7 +249,7 @@ poeinterfacelist = []
 
 # URLs to use
 maclookupurl = 'http://macvendors.co/api/%s'
-maclookupdburl = "https://linuxnet.ca/ieee/oui.txt"
+maclookupdburl = "http://standards-oui.ieee.org/oui.txt"
 
 # Regex
 IP_ADDRESS = re.compile("^\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}$")
@@ -589,7 +567,7 @@ def DEF_GATHERDATA(sshdevice):
 			DOWNLOAD_FILE(fsmshowurl, fsmtemplatename)
 		fsmtemplatenamefile = open(fsmtemplatename)
 		fsmvertemplate = textfsm.TextFSM(fsmtemplatenamefile)
-		tempfilelist.append(fsmtemplatenamefile)
+		tempfilelist.append(fsmtemplatename)
 		fsmtemplatenamefile.close()
 		# Show Interface Status
 		if "cisco_ios" in sshdevicetype.lower():
@@ -603,7 +581,7 @@ def DEF_GATHERDATA(sshdevice):
 			DOWNLOAD_FILE(fsmshowurl, fsmtemplatename)
 		fsmtemplatenamefile = open(fsmtemplatename)
 		fsmintstattemplate = textfsm.TextFSM(fsmtemplatenamefile)
-		tempfilelist.append(fsmtemplatenamefile)
+		tempfilelist.append(fsmtemplatename)
 		fsmtemplatenamefile.close()
 		# Show Power Inline
 		if "cisco_ios" in sshdevicetype.lower():
@@ -617,7 +595,7 @@ def DEF_GATHERDATA(sshdevice):
 			DOWNLOAD_FILE(fsmshowurl, fsmtemplatename)
 		fsmtemplatenamefile = open(fsmtemplatename)
 		fsmpoeporttemplate = textfsm.TextFSM(fsmtemplatenamefile)
-		tempfilelist.append(fsmtemplatenamefile)
+		tempfilelist.append(fsmtemplatename)
 		fsmtemplatenamefile.close()
 		# Show IP Interface Brief
 		if "cisco_ios" in sshdevicetype.lower():
@@ -631,7 +609,7 @@ def DEF_GATHERDATA(sshdevice):
 			DOWNLOAD_FILE(fsmshowurl, fsmtemplatename)
 		fsmtemplatenamefile = open(fsmtemplatename)
 		fsmipintbrtemplate = textfsm.TextFSM(fsmtemplatenamefile)
-		tempfilelist.append(fsmtemplatenamefile)
+		tempfilelist.append(fsmtemplatename)
 		fsmtemplatenamefile.close()
 		# Show Interface Transceiver
 		if "cisco_nxos" in sshdevicetype.lower():
@@ -641,7 +619,7 @@ def DEF_GATHERDATA(sshdevice):
 				DOWNLOAD_FILE(fsmshowurl, fsmtemplatename)
 			fsmtemplatenamefile = open(fsmtemplatename)
 			fsminttranstemplate = textfsm.TextFSM(fsmtemplatenamefile)
-			tempfilelist.append(fsmtemplatenamefile)
+			tempfilelist.append(fsmtemplatename)
 			fsmtemplatenamefile.close()
 		#################################################################
 		##################### DOWNLOAD TEMPLATES END ####################
@@ -1032,7 +1010,7 @@ def DEF_GATHERDATA(sshdevice):
 					arp_age = subrow[1]
 					arp_mac = subrow[2]
 					arp_host = sshdevicehostname
-					arp_int = subrow[4]
+					arp_int = subrow[3]
 					# Create Temp Dictionary
 					tempdict = {}
 					# Append Data to Temp Dictionary
@@ -1682,15 +1660,25 @@ if __name__ == "__main__":
 				skipimport = 0
 				ciscopoints = 0
 				hppoints = 0
+				# Missing IP
 				if row[1] == '':
 					ciscopoints = ciscopoints - 50
 					hppoints = hppoints - 50
+				# See if match in version or boot image
 				if row[6] != 'None':
 					ciscopoints = ciscopoints + 5
 				if re.match(ciscoverreg, row[3]):
 					ciscopoints = ciscopoints + 5
 				if re.match(nxosverreg, row[3]):
 					ciscopoints = ciscopoints + 5
+				# See if model is in list of IPs to match Cisco
+				if any(word in row[2] for word in ciscoxelist):
+					ciscopoints = ciscopoints + 5
+				if any(word in row[2] for word in ciscoioslist):
+					ciscopoints = ciscopoints + 5
+				if any(word in row[2] for word in cisconxoslist):
+					ciscopoints = ciscopoints + 5
+				# See if HP			
 				if re.match(hpproductreg, row[2]):
 					hppoints = hppoints + 5
 				# Check point total for Cisco match
@@ -1759,30 +1747,58 @@ if __name__ == "__main__":
 				if cdpduplicate == 0:
 					sshdevices.append(cdpdevice)
 	# Start Threads
+	
+	main_thread = threading.currentThread()
+	
 	for sshdevice in sshdevices:	
 		sshdeviceip = sshdevice.get('Device IPs').encode('utf-8')
 		sshdevicetype = sshdevice.get('Type').encode('utf-8')
+		
 		# Run Cisco Tests
 		if 'ios' in sshdevicetype.lower() or 'xe' in sshdevicetype.lower() or 'nxos' in sshdevicetype.lower():
 			print "Spawning Thread for " + sshdeviceip
 			t = threading.Thread(target=DEF_STARTALLTESTS, args=(sshdevice,))
+			t.daemon = True
 			t.start()
-			time.sleep(10)
-	main_thread = threading.currentThread()
+			time.sleep(5)
+	runningthreads = True
+	maxtimeout = 600
+	second = 0
+	while runningthreads == True:
+		if second > maxtimeout:
+			runningthreads = False
+			print 'Exiting due to maximum timeout reached. If this is due to the quantity of devices, please increase your timeout value. Currently its ' + str(maxtimeout) + '.' 
+		if threading.activeCount() == 1:
+			runningthreads = False
+		time.sleep(1)
+		second = second + 1
+	'''
 	for it_thread in threading.enumerate():
 		if it_thread != main_thread:
 			it_thread.join()
-
+	'''		
 ################################ EXPORTING REPORTS ################################
 print 'Exporting Informational Reports'
+#
+# Header Cell Styles
+HeaderFont = Font(bold=True)
+HeaderFont.size = 12
+HeaderStyle = NamedStyle(name='BoldHeader')
+HeaderStyle.font = HeaderFont
+
 ### Full Inventory ###
 try:
 	wb = Workbook()
+	wb.add_named_style(HeaderStyle)
 	dest_filename = 'Full-Inventory.xlsx'
 	dest_path = exportlocation + '\\' + dest_filename
 	ws1 = wb.active
 	ws1.title = "Device Inventory"
 	ws1.append(['Hostname','Product ID','Serial Number','Stack Number','Manufacture Date','Version','Description'])
+	# Set styles on header row
+	for cell in ws1["1:1"]:
+		cell.style = 'BoldHeader'
+	# Continue on with work
 	startrow = 2
 	for row in fullinventorylist:
 		if 'chassis' in row.get('Description').lower() and not 'fan' in row.get('Description').lower():
@@ -1806,6 +1822,10 @@ try:
 			ws1['G' + str(startrow)] = row.get('Description')
 			startrow = startrow + 1
 	ws2 = wb.create_sheet(title="Module Inventory")
+	# Set styles on header row
+	for cell in ws2["1:1"]:
+		cell.style = 'BoldHeader'
+	# Continue on with work
 	ws2.append(['Hostname','Product ID','Serial Number','Description'])
 	startrow = 2
 	for row in fullinventorylist:
@@ -1822,15 +1842,19 @@ except Exception as e:
 #### MAC and ARP Report ###
 try:
 	wb = Workbook()
+	wb.add_named_style(HeaderStyle)
 	dest_filename = 'ARP-MAC-Report.xlsx'
 	dest_path = exportlocation + '\\' + dest_filename
 	ws1 = wb.active
+	# Set styles on header row
+	for cell in ws1["1:1"]:
+		cell.style = 'BoldHeader'
+	# Continue on with work
 	ws1.title = "ARP Report"
 	ws1.append(['IP Address','MAC','Manufacturer','Source Device','Inteface','MAC Count on Interface'])
 	# Create ARP report by looking for closest hop interface
 	skiparpreport = 0
 	# Preload MAC DB
-	'''
 	try:
 		maclookupfilename = 'oui.txt'
 		tempfilelist.append(maclookupfilename)
@@ -1843,27 +1867,20 @@ try:
 	except Exception as e:
 		skipmac = 1
 		print 'Could not load MAC database. Error is ' + str(e)
-	'''
 	# Start processing data
 	for row in ipmactablelist:
 		tempdict = {}
 		tempdict['IP Address'] = row.get('IP Address')
-		tempdict['MAC'] = row.get('MAC')
-		'''
-		mac_company_mac = row.get('MAC')[0:7].replace('.','')
-		'''
+		maccompany = ''
+		mac_company_mac = str(row.get('MAC')[0:7].replace('.','')).upper()
 		# Get a vendor mac address and add to the table
 		try:
-			r = requests.get(maclookupurl % row.get('MAC'))
-			maccompany = r.json()
-			maccompany = maccompany.get('result').get('company')
-			'''
 			for line in maclookupdb:
 				if line.startswith(mac_company_mac):
-					maccompany = (re.search(r'^(([A-Z0-9]{2}[-]){2}[A-Z0-9]{2}.*\(hex\)\s+)(.*)',line)).group(3)
-				if maccompany == '':
+					linev = line.replace('\n','').replace('\t',' ')
+					maccompany = re.search(r'^[A-Z0-9]{6}\s+\(base 16\)\s+(.*)',linev).group(1)
+				if maccompany == '' or maccompany == None:
 					maccompany = 'Unknown'
-			'''
 		except:
 			maccompany = 'Unknown'
 		tempdict['MAC Manufacturer'] = maccompany
@@ -1900,14 +1917,24 @@ try:
 		startrow = startrow + 1
 	# Change worksheet
 	ws2 = wb.create_sheet(title="MAC")
+	# Set styles on header row
+	for cell in ws2["1:1"]:
+		cell.style = 'BoldHeader'
+	# Continue on with work
 	ws2.append(['Hostname','MAC','Manufacturer','VLAN','Interface'])
 	startrow = 2
 	for row in mactablelist:
 		# Get Manufacturer of MAC
+		maccompany = ''
+		mac_company_mac = str(row.get('MAC')[0:7].replace('.','')).upper()
+		# Get a vendor mac address and add to the table
 		try:
-			r = requests.get(maclookupurl % row.get('MAC'))
-			maccompany = r.json()
-			maccompany = maccompany.get('result').get('company')
+			for line in maclookupdb:
+				if line.startswith(mac_company_mac):
+					linev = line.replace('\n','').replace('\t',' ')
+					maccompany = re.search(r'^[A-Z0-9]{6}\s+\(base 16\)\s+(.*)',linev).group(1)
+				if maccompany == '' or maccompany == None:
+					maccompany = 'Unknown'
 		except:
 			maccompany = 'Unknown'
 		# Append to Workbook
@@ -1925,9 +1952,14 @@ except Exception as e:
 ### Interface Report ###
 try:
 	wb = Workbook()
+	wb.add_named_style(HeaderStyle)
 	dest_filename = 'Interface-Report.xlsx'
 	dest_path = exportlocation + '\\' + dest_filename
 	ws1 = wb.active
+	# Set styles on header row
+	for cell in ws1["1:1"]:
+		cell.style = 'BoldHeader'
+	# Continue on with work
 	ws1.title = "Interface Overview"
 	ws1.append(['Hostname','100Mb','1Gb','10gb','40gb','100gb','POE'])
 	startrow = 2
@@ -1960,7 +1992,7 @@ try:
 				fortygeint = fortygeint + 1
 			if '10/25/50/100' in subrow.get('Type') and int_hostname == subrow.get('Hostname'):
 				hundredgeint = hundredgeint + 1
-			if '10GB' in subrow.get('Type'):
+			if '10G' in subrow.get('Type'):
 				tengeint = tengeint + 1
 			if '10/40/100' in subrow.get('Type') and int_hostname == subrow.get('Hostname'):
 				hundredgeint = hundredgeint + 1
@@ -1979,6 +2011,10 @@ try:
 		startrow = startrow + 1
 	try:
 		ws2 = wb.create_sheet(title="L2 Interfaces")
+		# Set styles on header row
+		for cell in ws2["1:1"]:
+			cell.style = 'BoldHeader'
+		# Continue on with work
 		ws2.append(['Hostname','Interface','Type','Status','Speed','Duplex','VLAN','POE'])
 		startrow = 2
 		for row in l2interfacelist:
@@ -2001,6 +2037,10 @@ try:
 		print 'Error creating L2 Interface Report. Error is ' + str(e)	
 	try:
 		ws3 = wb.create_sheet(title="L3 Interfaces")
+		# Set styles on header row
+		for cell in ws3["1:1"]:
+			cell.style = 'BoldHeader'
+		# Continue on with work
 		ws3.append(['Hostname','Interface','IP Address'])
 		startrow = 2
 		for row in l3interfacelist:
@@ -2018,9 +2058,14 @@ except Exception as e:
 ### POE Report ###
 try:
 	wb = Workbook()
+	wb.add_named_style(HeaderStyle)
 	dest_filename = 'POE-Report.xlsx'
 	dest_path = exportlocation + '\\' + dest_filename
 	ws1 = wb.active
+	# Set styles on header row
+	for cell in ws1["1:1"]:
+		cell.style = 'BoldHeader'
+	# Continue on with work
 	ws1.title = "POE Interfaces"
 	ws1.append(['Hostname','Interface','Admin Status','Operational Status','Power Usage','Device Name','Device Class','Max POE Capability'])
 	startrow = 2
@@ -2047,9 +2092,14 @@ try:
 	if healthcheckv == 1:
 		print 'Exporting Health Reports'
 		wb = Workbook()
+		wb.add_named_style(HeaderStyle)
 		dest_filename = 'Health-Check-Report.xlsx'
 		dest_path = exportlocation + '\\' + dest_filename
 		ws1 = wb.active
+		# Set styles on header row
+		for cell in ws1["1:1"]:
+			cell.style = 'BoldHeader'
+		# Continue on with work
 		ws1.title = "Health Check"
 		ws1.append(['Hostname','Error','Description'])
 		startrow = 2
@@ -2076,7 +2126,7 @@ except Exception as e:
 print 'Starting Temp File Cleanup'
 for file in tempfilelist:
 	try:
-		os.remove(file.name)
+		os.remove(file)
 	except:
 		pass
 		
