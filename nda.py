@@ -493,14 +493,16 @@ def DEF_GATHERDATA(sshdevice):
 			try:
 				sshnet_connect = ConnectHandler(device_type=sshdevicetype, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret)
 				break
-			except (EOFError, SSHException, NetMikoTimeoutException):
-				sshdevicetype = sshdevicetype + '_telnet'
-				try:
-					sshnet_connect = ConnectHandler(device_type=sshdevicetype, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret)
-				except:
-					pass
-			except:
-				pass
+			except Exception as e:
+				if 'Authentication' in e:
+					continue
+				else:
+					sshdevicetypetelnet = sshdevicetype + '_telnet'
+					try:
+						sshnet_connect = ConnectHandler(device_type=sshdevicetypetelnet, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret)
+						break
+					except:
+						continue
 		try:
 			if not sshnet_connect:
 				sys.exit()
@@ -1234,27 +1236,26 @@ def DEF_HEALTHCHECK(sshdevice):
 	try:
 		for username in usernamelist:
 			try:
-				try:
-					sshusername = username.get('sshusername').encode('utf-8')
-					sshpassword = username.get('sshpassword').encode('utf-8')
-					enablesecret = username.get('enablesecret').encode('utf-8')
-				except:
-					sshusername = username.get('sshusername')
-					sshpassword = username.get('sshpassword')
-					enablesecret = username.get('enablesecret')
-				try:
-					sshnet_connect = ConnectHandler(device_type=sshdevicetype, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret)
-					break
-				except (EOFError, SSHException, NetMikoTimeoutException):
-					sshdevicetype = sshdevicetype + '_telnet'
-					try:
-						sshnet_connect = ConnectHandler(device_type=sshdevicetype, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret)
-					except:
-						pass
-				except:
-					pass
+				sshusername = username.get('sshusername').encode('utf-8')
+				sshpassword = username.get('sshpassword').encode('utf-8')
+				enablesecret = username.get('enablesecret').encode('utf-8')
 			except:
-				pass
+				sshusername = username.get('sshusername')
+				sshpassword = username.get('sshpassword')
+				enablesecret = username.get('enablesecret')
+			try:
+				sshnet_connect = ConnectHandler(device_type=sshdevicetype, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret)
+				break
+			except Exception as e:
+				if 'Authentication' in e:
+					continue
+				else:
+					sshdevicetypetelnet = sshdevicetype + '_telnet'
+					try:
+						sshnet_connect = ConnectHandler(device_type=sshdevicetypetelnet, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret)
+						break
+					except:
+						continue
 		try:
 			if not sshnet_connect:
 				sys.exit()
@@ -1429,26 +1430,31 @@ def DEF_CDPDISCOVERY(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv):
 	tempfilelist.append(fsmtemplatenamefile)
 	fsmtemplatenamefile.close()
 	# First Level of Discovery and building the initial seed discovery
-	for username in usernamelist:
-		try:
-			sshusername = username.get('sshusername').encode('utf-8')
-			sshpassword = username.get('sshpassword').encode('utf-8')
-			enablesecret = username.get('enablesecret').encode('utf-8')
-		except:
-			sshusername = username.get('sshusername')
-			sshpassword = username.get('sshpassword')
-			enablesecret = username.get('enablesecret')
-		try:
-			sshnet_connect = ConnectHandler(device_type=cdpdevicetypev, ip=cdpseedv, username=sshusername, password=sshpassword, secret=enablesecret)
-			break
-		except (EOFError, SSHException, NetMikoTimeoutException):
-			sshdevicetype = sshdevicetype + '_telnet'
+	try:
+		for username in usernamelist:
+			try:
+				sshusername = username.get('sshusername').encode('utf-8')
+				sshpassword = username.get('sshpassword').encode('utf-8')
+				enablesecret = username.get('enablesecret').encode('utf-8')
+			except:
+				sshusername = username.get('sshusername')
+				sshpassword = username.get('sshpassword')
+				enablesecret = username.get('enablesecret')
 			try:
 				sshnet_connect = ConnectHandler(device_type=sshdevicetype, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret)
-			except:
-				pass
-		except:
-			pass
+				break
+			except Exception as e:
+				if 'Authentication' in e:
+					continue
+				else:
+					sshdevicetypetelnet = sshdevicetype + '_telnet'
+					try:
+						sshnet_connect = ConnectHandler(device_type=sshdevicetypetelnet, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret)
+						break
+					except:
+						continue
+	except:
+		pass
 	try:
 		if not sshnet_connect:
 			sys.exit()
@@ -1535,26 +1541,31 @@ def DEF_CDPDISCOVERY(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv):
 			tempfilelist.append(fsmtemplatenamefile)
 			fsmtemplatenamefile.close()
 			# CDP Check
-			for username in usernamelist:
-				try:
-					sshusername = username.get('sshusername').encode('utf-8')
-					sshpassword = username.get('sshpassword').encode('utf-8')
-					enablesecret = username.get('enablesecret').encode('utf-8')
-				except:
-					sshusername = username.get('sshusername')
-					sshpassword = username.get('sshpassword')
-					enablesecret = username.get('enablesecret')
-				try:
-					sshnet_connect = ConnectHandler(device_type=cdpdevicetype, ip=cdpip, username=sshusername, password=sshpassword, secret=enablesecret)
-					break
-				except (EOFError, SSHException, NetMikoTimeoutException):
-					sshdevicetype = sshdevicetype + '_telnet'
+			try:
+				for username in usernamelist:
+					try:
+						sshusername = username.get('sshusername').encode('utf-8')
+						sshpassword = username.get('sshpassword').encode('utf-8')
+						enablesecret = username.get('enablesecret').encode('utf-8')
+					except:
+						sshusername = username.get('sshusername')
+						sshpassword = username.get('sshpassword')
+						enablesecret = username.get('enablesecret')
 					try:
 						sshnet_connect = ConnectHandler(device_type=sshdevicetype, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret)
-					except:
-						pass
-				except:
-					pass
+						break
+					except Exception as e:
+						if 'Authentication' in e:
+							continue
+						else:
+							sshdevicetypetelnet = sshdevicetype + '_telnet'
+							try:
+								sshnet_connect = ConnectHandler(device_type=sshdevicetypetelnet, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret)
+								break
+							except:
+								continue
+			except:
+				pass
 			skipcheck = 0
 			try:
 				if sshnet_connect:
