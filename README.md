@@ -4,11 +4,14 @@ The purpose of this tool is to pull information from the network via CDP/LLDP di
 
 ## Getting Started
 
-Look at the example files. In the XLSX spreadsheet, the columns are treated as separate datasets. The rows do not need to align.
+You need to download and add configuraiton information into the included XLSX file. This data is what the script uses to run.
 
-Step 1. Fill in the data according to the column header. Use the interface name (vlan 20) for all source interfaces.
-Step 2. Run the Python script and specify the output folder. 
-Step 3. Run and profit
+Step 1. Install Python 2.7
+Step 2. Install Git
+Step 3. Install Graphviz
+Step 4. Add a PATH variable pointing to the BIN folder for Graphviz
+Step 5. Fill in the XLSX spreadsheet
+Step 6. Run the script and reference the files
 
 Report any issues to my email and I will get them fixed.
 
@@ -18,7 +21,7 @@ GIT (This is required to download the XLHELPER module using a fork that I modifi
 XLHELPER
 OPENPYXL
 MNETSUITE (My local fork)
-
+REQUESTS
 
 ## Deployment
 
@@ -31,7 +34,7 @@ Configure the XLSX file (change only the values). After that just execute the sc
 - Network Topology Mapping (Only for CDP/LLDP discovered devices currently)
 
 ## *Caveats
-- Cisco only as of right now, will add in other vendors as I get the features fleshed out.
+- Cisco IOS/XE/NXOS only as of right now, will add in other vendors as I get the features fleshed out.
 
 ## Versioning
 
