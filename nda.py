@@ -58,12 +58,16 @@ except ImportError:
 try:
 	import netmiko
 	from netmiko import ConnectHandler
+	from paramiko.ssh_exception import SSHException 
+	from netmiko.ssh_exception import NetMikoTimeoutException
 except ImportError:
 	netmikoinstallstatus = fullpath = raw_input ('Netmiko module is missing, would you like to automatically install? (Y/N): ')
 	if 'y' in netmikoinstallstatus.lower():
 		os.system('python -m pip install netmiko')
 		import netmiko
 		from netmiko import ConnectHandler
+		from paramiko.ssh_exception import SSHException 
+		from netmiko.ssh_exception import NetMikoTimeoutException
 	else:
 		print "You selected an option other than yes. Please be aware that this script requires the use of netmiko. Please install manually and retry"
 		print 'Exiting in 5 seconds'
@@ -489,6 +493,12 @@ def DEF_GATHERDATA(sshdevice):
 			try:
 				sshnet_connect = ConnectHandler(device_type=sshdevicetype, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret)
 				break
+			except (EOFError, SSHException, NetMikoTimeoutException):
+				sshdevicetype = sshdevicetype + '_telnet'
+				try:
+					sshnet_connect = ConnectHandler(device_type=sshdevicetype, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret)
+				except:
+					pass
 			except:
 				pass
 		try:
@@ -636,13 +646,11 @@ def DEF_GATHERDATA(sshdevice):
 		sshcommand = showrun
 		sshresult = sshnet_connect.send_command(sshcommand)
 		showrunresult = sshresult
-		if not 'invalid' in sshresult:
-			DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)
+		DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)
 		######################## Show Startup Config #########################
 		sshcommand = showstart
 		sshresult = sshnet_connect.send_command(sshcommand)
-		if not 'invalid' in sshresult:
-			DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)
+		DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)
 		######################## Show CDP Neighbors #########################
 		sshcommand = showcdp
 		sshresult = sshnet_connect.send_command(sshcommand)
@@ -668,7 +676,7 @@ def DEF_GATHERDATA(sshdevice):
 		# Export Version, used later in the full inventory list (NOT A GLOBAL LIST) #
 		data = fsmvertemplate.ParseText(sshresult)
 		tempversioninfo = []
-		if sshdevicetype.lower() == 'cisco_ios' or sshdevicetype.lower() == 'cisco_xe':
+		if 'cisco_ios' in sshdevicetype.lower() or 'cisco_xe' in sshdevicetype.lower():
 			for subrow in data:
 				# Get Version Number and attach to temporary dictionary
 				ver_ver = subrow[0]
@@ -680,7 +688,7 @@ def DEF_GATHERDATA(sshdevice):
 				tempdict['Hostname'] = ver_host
 				# Append Temp Dictionary to Global List
 				tempversioninfo.append(tempdict)
-		if sshdevicetype.lower() == 'cisco_nxos':
+		if 'cisco_nxos' in sshdevicetype.lower():
 			for subrow in data:
 				# Get Version Number and attach to temporary dictionary
 				ver_ver = subrow[2]
@@ -693,11 +701,11 @@ def DEF_GATHERDATA(sshdevice):
 				# Append Temp Dictionary to Global List
 				tempversioninfo.append(tempdict)
 		######################## Show Location #########################
-		if sshdevicetype.lower() == 'cisco_ios' or sshdevicetype.lower() == 'cisco_xe':
+		if 'cisco_ios' in sshdevicetype.lower() or 'cisco_xe' in sshdevicetype.lower():
 			sshcommand = showlocation
 			sshresult = sshnet_connect.send_command(sshcommand)
 			inv_location = DEF_REMOVEPREFIX(sshresult,'snmp-server location ')
-		if sshdevicetype.lower() == 'cisco_nxos':
+		if 'cisco_nxos' in sshdevicetype.lower():
 			sshcommand = showlocation_nxos
 			sshresult = sshnet_connect.send_command(sshcommand)
 			inv_location = DEF_REMOVEPREFIX(sshresult,'snmp-server location ')
@@ -715,7 +723,7 @@ def DEF_GATHERDATA(sshdevice):
 			DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)
 		# Export Inventory #
 		data = fsminvtemplate.ParseText(sshresult)
-		if sshdevicetype.lower() == 'cisco_ios' or sshdevicetype.lower() == 'cisco_xe':
+		if 'cisco_ios' in sshdevicetype.lower() or 'cisco_xe' in sshdevicetype.lower():
 			for subrow in data:
 				# Get Product Name, Product Serial Number, Description and Stack
 				inv_pid = subrow[2]
@@ -744,7 +752,7 @@ def DEF_GATHERDATA(sshdevice):
 				tempdict['Location'] = inv_location
 				# Append Temp Dictionary to Global List
 				fullinventorylist.append(tempdict)
-		if sshdevicetype.lower() == 'cisco_nxos':
+		if 'cisco_nxos' in sshdevicetype.lower():
 			for subrow in data:
 				# Get Product Name, Product Serial Number, Description and Stack
 				inv_pid = subrow[2]
@@ -819,7 +827,7 @@ def DEF_GATHERDATA(sshdevice):
 			# Get MAC Interface Count
 			macintcountb = []
 			macintcount = []
-			if sshdevicetype.lower() == 'cisco_ios' or sshdevicetype.lower() == 'cisco_xe':
+			if 'cisco_ios' in sshdevicetype.lower() or 'cisco_xe' in sshdevicetype.lower():
 				for macintrow0 in data:
 					macintname = macintrow0[3]
 					tempdict = {}
@@ -861,7 +869,7 @@ def DEF_GATHERDATA(sshdevice):
 					tempdict['Interface'] = mac_int
 					tempdict['Count'] = mac_count
 					mactablelist.append(tempdict)
-			if sshdevicetype.lower() == 'cisco_nxos':
+			if 'cisco_nxos' in sshdevicetype.lower():
 				for macintrow0 in data:
 					macintname = macintrow0[6]
 					tempdict = {}
@@ -906,7 +914,7 @@ def DEF_GATHERDATA(sshdevice):
 			######################## Show Power Budget #########################
 			if powerbudget == 1:
 				######################## Show Power Inline #########################
-				if sshdevicetype.lower() == 'cisco_ios' or sshdevicetype.lower() == 'cisco_xe':
+				if 'cisco_ios' in sshdevicetype.lower() or 'cisco_xe' in sshdevicetype.lower():
 					sshcommand = showpowerinline
 					sshresult = sshnet_connect.send_command(sshcommand)
 					if not 'invalid' in sshresult:
@@ -938,7 +946,7 @@ def DEF_GATHERDATA(sshdevice):
 					sshresult = sshnet_connect.send_command(sshcommand)
 					if not 'invalid' in sshresult:
 							DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)
-				if sshdevicetype.lower() == 'cisco_nxos':
+				if 'cisco_nxos' in sshdevicetype.lower():
 					sshcommand = showpowerinline_nxos
 					sshresult = sshnet_connect.send_command(sshcommand)
 					if not 'invalid' in sshresult:
@@ -1110,7 +1118,7 @@ def DEF_GATHERDATA(sshdevice):
 		if not 'invalid' in sshresult:
 			DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)
 		data = fsmipintbrtemplate.ParseText(sshresult)
-		if sshdevicetype.lower() == 'cisco_ios' or sshdevicetype.lower() == 'cisco_xe':
+		if 'cisco_ios' in sshdevicetype.lower() or 'cisco_xe' in sshdevicetype.lower():
 			for subrow in data:
 				# Get Interface,Description,Status,VLAN,Duplex,Speed,Type
 				# Create Temp Dictionary
@@ -1123,7 +1131,7 @@ def DEF_GATHERDATA(sshdevice):
 				tempdict['Line Protocol'] = subrow[3]
 				# Append Temp Dictionary to Global List
 				l3interfacelist.append(tempdict)
-		if sshdevicetype.lower() == 'cisco_nxos':
+		if 'cisco_nxos' in sshdevicetype.lower():
 			for subrow in data:
 				# Get Interface,Description,Status,VLAN,Duplex,Speed,Type
 				# Create Temp Dictionary
@@ -1156,10 +1164,10 @@ def DEF_GATHERDATA(sshdevice):
 			DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)	
 		#Show Temperature
 		if temperature == 1:
-			if sshdevicetype.lower() == 'cisco_ios' or sshdevicetype.lower() == 'cisco_xe':
+			if 'cisco_ios' in sshdevicetype.lower() or 'cisco_xe' in sshdevicetype.lower():
 				sshcommand = showtemp
 				sshresult = sshnet_connect.send_command(sshcommand)
-			if sshdevicetype.lower() == 'cisco_nxos':
+			if 'cisco_nxos' in sshdevicetype.lower():
 				sshcommand = showtemp_nxos
 				sshresult = sshnet_connect.send_command(sshcommand)
 			if not 'invalid' in sshresult:
@@ -1237,6 +1245,12 @@ def DEF_HEALTHCHECK(sshdevice):
 				try:
 					sshnet_connect = ConnectHandler(device_type=sshdevicetype, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret)
 					break
+				except (EOFError, SSHException, NetMikoTimeoutException):
+					sshdevicetype = sshdevicetype + '_telnet'
+					try:
+						sshnet_connect = ConnectHandler(device_type=sshdevicetype, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret)
+					except:
+						pass
 				except:
 					pass
 			except:
@@ -1279,7 +1293,7 @@ def DEF_HEALTHCHECK(sshdevice):
 				if hcshowintsingleint == '':
 					hcshowintsingleint = 0
 				hcshowintsingleint = int(hcshowintsingleint)
-				if hcshowintsingleint > 0:
+				if hcshowintsingleint > 20:
 					hcerror = 'Input Errors'
 					hcinterfacecounter = hcshowintsingle[8]
 					hcinterfacecounter = hcinterfacecounter.encode('utf-8')
@@ -1290,7 +1304,7 @@ def DEF_HEALTHCHECK(sshdevice):
 				if hcshowintsingleint == '':
 					hcshowintsingleint = 0
 				hcshowintsingleint = int(hcshowintsingleint)			
-				if hcshowintsingleint > 0:
+				if hcshowintsingleint > 20:
 					hcerror = 'CRC Errors'
 					hcinterfacecounter = hcshowintsingle[9]
 					hcinterfacecounter = hcinterfacecounter
@@ -1313,7 +1327,7 @@ def DEF_HEALTHCHECK(sshdevice):
 				if hcshowintsingleint == '':
 					hcshowintsingleint = 0
 				hcshowintsingleint = int(hcshowintsingleint)
-				if hcshowintsingleint > 0:
+				if hcshowintsingleint > 20:
 					hcerror = 'Shared Medium'
 					hcinterfacecounter = hcshowintsingle[11]
 					hcinterfacecounter = hcinterfacecounter.encode('utf-8')
@@ -1332,7 +1346,7 @@ def DEF_HEALTHCHECK(sshdevice):
 					healthcheckcsv.append ((sshdevicehostname + ',' + hcerror + ',' + hcdescription))
 		#Show Temperature
 		try:
-			if sshdevicetype.lower() == 'cisco_ios' or sshdevicetype.lower() == 'cisco_xe':
+			if 'cisco_ios' in sshdevicetype.lower() or 'cisco_xe' in sshdevicetype.lower():
 				sshcommand = showtemp
 				sshresult = sshnet_connect.send_command(sshcommand)
 				hcshowtemp = fsmtemptemplate.ParseText(sshresult)
@@ -1344,7 +1358,7 @@ def DEF_HEALTHCHECK(sshdevice):
 					hcerror = 'Temperature Alert'
 					hcdescription = 'Temperature has been recorded at ' + hctempdegrees + ' Celsius. Please lower the temperature for the surrounding environment '
 					healthcheckcsv.append ((sshdevicehostname + ',' + hcerror + ',' + hcdescription))
-			if sshdevicetype.lower() == 'cisco_nxos':
+			if 'cisco_nxos' in sshdevicetype.lower():
 				sshcommand = showtemp_nxos
 				sshresult = sshnet_connect.send_command(sshcommand)
 				hcshowtemp = fsmtemptemplate.ParseText(sshresult)
@@ -1427,6 +1441,12 @@ def DEF_CDPDISCOVERY(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv):
 		try:
 			sshnet_connect = ConnectHandler(device_type=cdpdevicetypev, ip=cdpseedv, username=sshusername, password=sshpassword, secret=enablesecret)
 			break
+		except (EOFError, SSHException, NetMikoTimeoutException):
+			sshdevicetype = sshdevicetype + '_telnet'
+			try:
+				sshnet_connect = ConnectHandler(device_type=sshdevicetype, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret)
+			except:
+				pass
 		except:
 			pass
 	try:
@@ -1527,6 +1547,12 @@ def DEF_CDPDISCOVERY(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv):
 				try:
 					sshnet_connect = ConnectHandler(device_type=cdpdevicetype, ip=cdpip, username=sshusername, password=sshpassword, secret=enablesecret)
 					break
+				except (EOFError, SSHException, NetMikoTimeoutException):
+					sshdevicetype = sshdevicetype + '_telnet'
+					try:
+						sshnet_connect = ConnectHandler(device_type=sshdevicetype, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret)
+					except:
+						pass
 				except:
 					pass
 			skipcheck = 0
@@ -1800,7 +1826,7 @@ try:
 	# Continue on with work
 	startrow = 2
 	for row in fullinventorylist:
-		if 'chassis' in row.get('Description').lower() and not 'fan' in row.get('Description').lower():
+		if 'chassis' in row.get('Description').lower() or 'k9' in row.get('Description').lower() and not 'fan' in row.get('Description').lower():
 			# Attempt to find the age of the device
 			try:
 				age_base = 1996
@@ -1826,12 +1852,11 @@ try:
 	ws2.append(['Hostname','Product ID','Serial Number','Description'])
 	startrow = 2
 	for row in fullinventorylist:
-		if not 'chassis' in row.get('Description').lower() or 'fan' in row.get('Description').lower():
-			ws2['A' + str(startrow)] = row.get('Hostname')
-			ws2['B' + str(startrow)] = row.get('Product ID')
-			ws2['C' + str(startrow)] = row.get('Serial Number')
-			ws2['D' + str(startrow)] = row.get('Description')
-			startrow = startrow + 1
+		ws2['A' + str(startrow)] = row.get('Hostname')
+		ws2['B' + str(startrow)] = row.get('Product ID')
+		ws2['C' + str(startrow)] = row.get('Serial Number')
+		ws2['D' + str(startrow)] = row.get('Description')
+		startrow = startrow + 1
 	wb.add_named_style(HeaderStyle)
 	# Set styles on header row
 	for cell in ws1["1:1"]:
@@ -1889,6 +1914,8 @@ try:
 			tempdict['Interface'] = row.get('Interface')
 			tempdict['MAC Count on Interface'] = 1
 		else:
+			macint = ''
+			machost = ''
 			# Find the lowest count interface in the list that matches the mac address
 			maccount = 100000
 			for temprow in mactablelist:
