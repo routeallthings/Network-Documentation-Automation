@@ -335,6 +335,11 @@ if 'nxos' in devicediscoverysshtypev.lower() or 'ios' in devicediscoverysshtypev
 devicediscoverymapv = configdict.get('DeviceDiscoveryMap')
 if devicediscoverymapv == None:
 	devicediscoverymapv = 0
+devicediscoveryincludephones = configdict.get('DeviceDiscoveryIncludePhones')
+if devicediscoveryincludephones == None or devicediscoveryincludephones == False:
+	devicediscoveryincludephones = 0
+else:
+	devicediscoveryincludephones = 1
 devicediscoverymaptitlev = configdict.get('DeviceDiscoveryMapTitle')
 if devicediscoverymaptitlev == None:
 	devicediscoverymaptitlev = 'Network Topology'
@@ -416,6 +421,7 @@ mnetvar['exclude'] = mnetexclude
 mnetvar['subnets'] = mnetsubnets
 mnetvar['graph'] = mnetgraph
 mnetvar['exclude_hosts'] = []
+mnetvar['include_phones'] = devicediscoveryincludephones
 mnetfile = 'nda-mnetvar.conf'
 mnetcat = 'nda-mnetcat.csv'
 with open(mnetfile,'w') as jsonfile:
@@ -1934,11 +1940,9 @@ try:
 					maccount = temprow.get('Count')
 					macint = temprow.get('Interface')
 					machost = temprow.get('Hostname')
-			# Bug Fix - Somehow some interfaces were being missed (showing 100000 mac), finding interface match from earlier and matching on that
+			# Bug Fix - If it could not calculate, give the number a non-integer unknown
 			if maccount == 100000:
-				for temprow in mactablelist:
-					if macint == temprow.get('Interface'):
-						maccount = temprow.get('Count')
+				maccount = 'Unknown'
 			tempdict['Source Device'] = machost
 			tempdict['Interface'] = macint
 			tempdict['MAC Count on Interface'] = maccount
@@ -2029,7 +2033,7 @@ try:
 				fortygeint = fortygeint + 1
 			if '10/25/50/100' in subrow.get('Type') and int_hostname == subrow.get('Hostname'):
 				hundredgeint = hundredgeint + 1
-			if '10G' in subrow.get('Type'):
+			if '10G' in subrow.get('Type') and int_hostname == subrow.get('Hostname'):
 				tengeint = tengeint + 1
 			if '10/40/100' in subrow.get('Type') and int_hostname == subrow.get('Hostname'):
 				hundredgeint = hundredgeint + 1
@@ -2157,9 +2161,11 @@ except Exception as e:
 print 'Starting to export Map Topology'
 try:
 	if devicediscoverymapv == 1:
-		topologyfile = exportlocation + '\\Network_Topology.svg'
+		topologyfile = exportlocation + '\\Network_Topology.pdf'
+		topologyfiledot = exportlocation + '\\Network_Topology.dot'
 		topologyname = devicediscoverymaptitlev
 		graph.output_dot(topologyfile, topologyname)
+		graph.output_dot(topologyfiledot, topologyname)
 except Exception as e:
 	print 'Error with exporting network topology. Error is ' + str(e)
 # Cleanup
