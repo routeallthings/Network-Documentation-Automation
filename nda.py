@@ -1,17 +1,15 @@
 #!/usr/bin/env python
 
-'''
----AUTHOR---
-Name: Matt Cross
-Email: routeallthings@gmail.com
+# ---AUTHOR---
+# Name: Matt Cross
+# Email: routeallthings@gmail.com
 
----PREREQ---
-INSTALL netmiko (pip install netmiko)
-INSTALL textfsm (pip install textfsm)
-INSTALL openpyxl (pip install openpyxl)
-INSTALL fileinput (pip install fileinput)
-INSTALL xlhelper (python -m pip install git+git://github.com/routeallthings/xlhelper.git)
-'''
+# ---PREREQ---
+# INSTALL netmiko (pip install netmiko)
+# INSTALL textfsm (pip install textfsm)
+# INSTALL openpyxl (pip install openpyxl)
+# INSTALL fileinput (pip install fileinput)
+# INSTALL xlhelper (python -m pip install git+git://github.com/routeallthings/xlhelper.git)
 
 #Module Imports (Native)
 import re
