@@ -62,6 +62,7 @@ except ImportError:
 	netmikoinstallstatus = fullpath = raw_input ('Netmiko module is missing, would you like to automatically install? (Y/N): ')
 	if 'y' in netmikoinstallstatus.lower():
 		os.system('python -m pip install netmiko')
+		os.system('python -m pip install utils')
 		import netmiko
 		from netmiko import ConnectHandler
 		from paramiko.ssh_exception import SSHException 
@@ -248,6 +249,7 @@ l2interfacelist = []
 l3interfacelist = []
 vlanlist = []
 poeinterfacelist = []
+cdpdiscoverybl = []
 
 # URLs to use
 maclookupurl = 'http://macvendors.co/api/%s'
@@ -328,7 +330,8 @@ if devicediscoverysshtypev == None:
 	devicediscoverysshtypev = 'cisco_ios'
 if 'nxos' in devicediscoverysshtypev.lower() or 'ios' in devicediscoverysshtypev.lower() or 'xe' in devicediscoverysshtypev.lower():
 	devicediscoverysshtypev = devicediscoverysshtypev.encode('utf-8')
-	devicediscoverysshtypev = 'cisco_' + devicediscoverysshtypev
+	if not 'cisco' in devicediscoverysshtypev:
+		devicediscoverysshtypev = 'cisco_' + devicediscoverysshtypev
 #### MNET CDP DISCOVERY ####
 devicediscoverymapv = configdict.get('DeviceDiscoveryMap')
 if devicediscoverymapv == None:
@@ -1433,37 +1436,39 @@ def DEF_CDPDISCOVERY(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv):
 	fsmcdptemplate = textfsm.TextFSM(fsmtemplatenamefile)
 	tempfilelist.append(fsmtemplatenamefile)
 	fsmtemplatenamefile.close()
+	#
+	sshdevicetype = cdpdevicetypev
+	sshdeviceip = cdpseedv
 	# First Level of Discovery and building the initial seed discovery
-	try:
-		for username in usernamelist:
-			try:
-				sshusername = username.get('sshusername').encode('utf-8')
-				sshpassword = username.get('sshpassword').encode('utf-8')
-				enablesecret = username.get('enablesecret').encode('utf-8')
-			except:
-				sshusername = username.get('sshusername')
-				sshpassword = username.get('sshpassword')
-				enablesecret = username.get('enablesecret')
-			try:
-				sshnet_connect = ConnectHandler(device_type=sshdevicetype, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret)
-				break
-			except Exception as e:
-				if 'Authentication' in e:
+	for username in usernamelist:
+		try:
+			sshusername = username.get('sshusername').encode('utf-8')
+			sshpassword = username.get('sshpassword').encode('utf-8')
+			enablesecret = username.get('enablesecret').encode('utf-8')
+		except:
+			sshusername = username.get('sshusername')
+			sshpassword = username.get('sshpassword')
+			enablesecret = username.get('enablesecret')
+		try:
+			sshnet_connect = ConnectHandler(device_type=sshdevicetype, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret)
+			break
+		except Exception as e:
+			if 'Authentication' in e:
+				continue
+			else:
+				sshdevicetypetelnet = sshdevicetype + '_telnet'
+				try:
+					sshnet_connect = ConnectHandler(device_type=sshdevicetypetelnet, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret)
+					break
+				except:
 					continue
-				else:
-					sshdevicetypetelnet = sshdevicetype + '_telnet'
-					try:
-						sshnet_connect = ConnectHandler(device_type=sshdevicetypetelnet, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret)
-						break
-					except:
-						continue
-	except:
-		pass
 	try:
 		if not sshnet_connect:
+			time.sleep(3)
 			sys.exit()
-	except:
-		print 'Error with connecting to ' + cdpseedv
+	except Exception as e:
+		print 'Error while gathering data on ' + cdpseedv + '. Error is ' + str(e)
+		time.sleep(5)
 		sys.exit()
 	sshdevicehostname = sshnet_connect.find_prompt()
 	sshdevicehostname = sshdevicehostname.strip('#')
@@ -1478,6 +1483,14 @@ def DEF_CDPDISCOVERY(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv):
 	hcshowcdp = fsmcdptemplate.ParseText(sshresult)
 	print 'Attempting discovery on the seed router'
 	cdpdevicediscovery.append(cdpseedv.decode('utf-8'))
+	# Adding Seed Router to reports
+	seedroutertype = re.search('(\S+)_(\S+)',sshdevicetype)
+	cdpdevicedict = {}
+	cdpdevicedict['Device IPs'] = sshdeviceip
+	cdpdevicedict['Vendor'] = seedroutertype.group(1)
+	cdpdevicedict['Type'] = seedroutertype.group(2)
+	cdpdevicecomplete.append(cdpdevicedict)
+	# Starting loop
 	for cdpnei in hcshowcdp:
 		try:	
 			cdpalreadyexists = 0
@@ -1487,15 +1500,15 @@ def DEF_CDPDISCOVERY(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv):
 			cdpneiip = cdpnei[1]
 			cdpneidevice = cdpnei[2]
 			cdpneiosfull = cdpnei[5]
-			if 'cisco' in cdpneidevice.lower():
+			if 'cisco' in cdpneidevice.lower() or 'cisco' in cdpneiosfull.lower():
 				cdpneivend = 'cisco'
-				if 'xe' in cdpneiosfull.lower():
+				if re.match('.*\iosxe|xe.*',cdpneiosfull.lower()):
 					cdpneios = 'xe'
 					cdpnexthop = 1
-				if 'ios' in cdpneiosfull.lower() and not 'xe' in cdpneiosfull.lower():
+				if re.match('.*ios(?!xe).*',cdpneiosfull.lower()):
 					cdpneios = 'ios'
 					cdpnexthop = 1
-				if 'nxos' in cdpneiosfull.lower() or 'nexus' in cdpneiosfull.lower():
+				if re.match('.*nx-os|nexus.*',cdpneiosfull.lower()):
 					cdpneios = 'nxos'
 					cdpnexthop = 1
 				for cdpdevice in cdpdevicecomplete:
@@ -1529,6 +1542,9 @@ def DEF_CDPDISCOVERY(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv):
 	# Attempt Subsequent Discovery Levels (Non-Threaded)
 	def DEF_CDPDISCOVERYSUB(usernamelist,sshdeviceip,cdptype,cdpvendor,cdpdiscoverydepthv):
 		try:
+			for cdpd in cdpdiscoverybl:
+				if cdpd == sshdeviceip:
+					sys.exit()
 			# FSM Templates
 			cdpdevicetype = cdpvendor.lower() + '_' + cdptype.lower()
 			if "cisco_ios" in cdpdevicetype.lower():
@@ -1573,6 +1589,7 @@ def DEF_CDPDISCOVERY(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv):
 			skipcheck = 0
 			try:
 				if sshnet_connect:
+					cdpdiscoverybl.append(sshdeviceip)
 					pass
 			except:
 				print 'Error with connecting to ' + sshdeviceip + '. Skipping Check'	
@@ -1600,13 +1617,13 @@ def DEF_CDPDISCOVERY(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv):
 					cdpneiosfull = cdpnei[5]
 					if 'cisco' in cdpneidevice.lower():
 						cdpneivend = 'cisco'
-						if 'xe' in cdpneiosfull.lower():
+						if re.match('.*\iosxe|xe.*',cdpneiosfull.lower()):
 							cdpneios = 'xe'
 							cdpnexthop = 1
-						if 'ios' in cdpneiosfull.lower() and not 'xe' in cdpneiosfull.lower():
+						if re.match('.*ios(?!xe).*',cdpneiosfull.lower()):
 							cdpneios = 'ios'
 							cdpnexthop = 1
-						if 'nxos' in cdpneiosfull.lower() or 'nexus' in cdpneiosfull.lower():
+						if re.match('.*nx-os|nexus.*',cdpneiosfull.lower()):
 							cdpneios = 'nxos'
 							cdpnexthop = 1
 						for cdpdevice in cdpdevicecomplete:
@@ -1643,7 +1660,7 @@ def DEF_CDPDISCOVERY(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv):
 	cdpdiscoverydepthv = 30
 	cdpmaxloop = cdpdiscoverydepthv * 3
 	cdpmaxloopiteration = 0
-	if cdpdevicecomplete:
+	if not cdpdevicecomplete == []:
 		while cdpmaxloopiteration < cdpmaxloop:
 			for cdpdevice in cdpdevicecomplete:
 				cdpalreadyexists=0
@@ -1803,7 +1820,7 @@ if __name__ == "__main__":
 			t.start()
 			time.sleep(5)
 	runningthreads = True
-	maxtimeout = 600
+	maxtimeout = 900
 	second = 0
 	while runningthreads == True:
 		if second > maxtimeout:
@@ -1909,6 +1926,8 @@ try:
 	# Start processing data
 	for row in ipmactablelist:
 		tempdict = {}
+		if row.get('IP Address') == 'Incomplete':
+			continue
 		tempdict['IP Address'] = row.get('IP Address')
 		tempdict['MAC'] = row.get('MAC')
 		maccompany = ''
@@ -2021,11 +2040,11 @@ try:
 		hundredgeint = 0
 		poeint = 0
 		for subrow in l2interfacelist:
-			if '10/100BaseTX' in subrow.get('Type') and int_hostname == subrow.get('Hostname'):
+			if '100BaseTX' in subrow.get('Type') and int_hostname == subrow.get('Hostname'):
 				faint = faint + 1
-			if '10/100/1000BaseTX' in subrow.get('Type') and int_hostname == subrow.get('Hostname'):
+			if '1000BaseTX' in subrow.get('Type') and int_hostname == subrow.get('Hostname'):
 				geint = geint + 1
-			if '10/100/10000BaseTX' in subrow.get('Type') and int_hostname == subrow.get('Hostname'):
+			if '10000BaseTX' in subrow.get('Type') and int_hostname == subrow.get('Hostname'):
 				tengeint = tengeint + 1
 			if '10/40GB' in subrow.get('Type') and int_hostname == subrow.get('Hostname'):
 				fortygeint = fortygeint + 1
