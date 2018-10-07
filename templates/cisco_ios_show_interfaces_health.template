@@ -6,13 +6,12 @@ Value ADDRESS ([a-zA-Z0-9]+.[a-zA-Z0-9]+.[a-zA-Z0-9]+)
 Value BIA ([a-zA-Z0-9]+.[a-zA-Z0-9]+.[a-zA-Z0-9]+)
 Value DUPLEX (.+?)
 Value SPEED (.+?)
+Value OUTPUT_DROPS (\d+)
 Value INPUT_ERRORS (\d+)
 Value CRC_ERRORS (\d+)
 Value OUTPUT_ERRORS (\d+)
 Value COLLISIONS (\d+)
 Value INTERFACE_RESETS (\d+)
-Value OUTPUT_DROPS (\d+)
-
 
 Start
   ^${INTERFACE} is ${LINK_STATUS}.*protocol is ${PROTOCOL_STATUS}
