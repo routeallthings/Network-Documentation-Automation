@@ -198,6 +198,7 @@ showiparp = "show ip arp"
 showmacaddress = "show mac address-table"
 showmacaddress_older = "show mac-address-table"
 showlocation = "show running-config | include ^snmp-server location"
+showlicense = "show license"
 
 # NXOS Specific
 showpowerinline_nxos = "show environment power"
@@ -669,7 +670,12 @@ def DEF_GATHERDATA(sshdevice):
 		sshcommand = showlldp
 		sshresult = sshnet_connect.send_command(sshcommand)
 		if not 'invalid' in sshresult:
-			DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)		
+			DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)	
+		######################## Show License #########################
+		sshcommand = showlicense
+		sshresult = sshnet_connect.send_command(sshcommand)
+		if not 'invalid' in sshresult:
+			DEF_WRITEOUTPUT (sshcommand,sshresult,sshdevicehostname,outputfolder)				
 		######################## Show Version #########################
 		sshcommand = showver
 		sshresult = sshnet_connect.send_command(sshcommand)
@@ -1002,7 +1008,7 @@ def DEF_GATHERDATA(sshdevice):
 		#################################################################
 		#################### ROUTING SPECIFIC START #####################
 		#################################################################
-		if 'ip routing' in showrunresult.lower() or 'cisco_nxos' in sshdevicetype:
+		if 'route' in showrunresult.lower() or 'cisco_nxos' in sshdevicetype:
 			######################## Show IP ARP #########################
 			sshcommand = showiparp
 			sshresult = sshnet_connect.send_command(sshcommand)
@@ -1324,7 +1330,7 @@ def DEF_HEALTHCHECK(sshdevice):
 				if hcshowintsingleint == '':
 					hcshowintsingleint = 0
 				hcshowintsingleint = int(hcshowintsingleint)		
-				if hcshowintsingleint > 10000:
+				if hcshowintsingleint > 100:
 					hcerror = 'Saturated Link'
 					hcinterfacecounter = hcshowintsingle[10]
 					hcinterfacecounter = hcinterfacecounter.encode('utf-8')
