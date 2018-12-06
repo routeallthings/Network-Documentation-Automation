@@ -1515,26 +1515,37 @@ def DEF_CDPDISCOVERY(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv):
 			cdpneiip = cdpnei[1]
 			cdpneidevice = cdpnei[2]
 			cdpneiosfull = cdpnei[5]
-			if 'cisco' in cdpneidevice.lower() or 'cisco' in cdpneiosfull.lower():
-				cdpneivend = 'cisco'
-				if re.match('.*\iosxe|xe.*',cdpneiosfull.lower()):
-					cdpneios = 'xe'
-					cdpnexthop = 1
-				if re.match('.*ios(?!xe).*',cdpneiosfull.lower()):
-					cdpneios = 'ios'
-					cdpnexthop = 1
-				if re.match('.*nx-os|nexus.*',cdpneiosfull.lower()):
-					cdpneios = 'nxos'
-					cdpnexthop = 1
-				for cdpdevice in cdpdevicecomplete:
-					cdpdeviceip = cdpdevice.get('Device IPs').encode('utf-8')
-					if cdpdeviceip == cdpneiip:
-						cdpalreadyexists = 1
-				if cdpalreadyexists == 0 and cdpnexthop == 1:
-					cdpdevicedict['Device IPs'] = cdpneiip.decode('utf-8')
-					cdpdevicedict['Vendor'] = cdpneivend.decode('utf-8')
-					cdpdevicedict['Type'] = cdpneios.decode('utf-8')
-					cdpdevicecomplete.append(cdpdevicedict)
+			subnetcheck = 0
+			subnetcheck2 = 0
+			if cdpneiip == None or cdpneiip == '':
+				subnetcheck2 = 0
+			else:
+				subnetcheck2 = 1
+			if subnetcheck2 == 1:
+				for subnetwork in mnetsubnets:
+						if addressInNetwork(cdpneiip,subnetwork) == True:
+							subnetcheck = 1
+			if subnetcheck == 1:
+				if 'cisco' in cdpneidevice.lower() or 'cisco' in cdpneiosfull.lower():
+					cdpneivend = 'cisco'
+					if re.match('.*\iosxe|xe.*',cdpneiosfull.lower()):
+						cdpneios = 'xe'
+						cdpnexthop = 1
+					if re.match('.*ios(?!xe).*',cdpneiosfull.lower()):
+						cdpneios = 'ios'
+						cdpnexthop = 1
+					if re.match('.*nx-os|nexus.*',cdpneiosfull.lower()):
+						cdpneios = 'nxos'
+						cdpnexthop = 1
+					for cdpdevice in cdpdevicecomplete:
+						cdpdeviceip = cdpdevice.get('Device IPs').encode('utf-8')
+						if cdpdeviceip == cdpneiip:
+							cdpalreadyexists = 1
+					if cdpalreadyexists == 0 and cdpnexthop == 1:
+						cdpdevicedict['Device IPs'] = cdpneiip.decode('utf-8')
+						cdpdevicedict['Vendor'] = cdpneivend.decode('utf-8')
+						cdpdevicedict['Type'] = cdpneios.decode('utf-8')
+						cdpdevicecomplete.append(cdpdevicedict)
 		except IndexError:
 			print 'Could not connect to device ' + cdpneiip
 			try:
@@ -1561,105 +1572,110 @@ def DEF_CDPDISCOVERY(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv):
 				if cdpd == sshdeviceip:
 					sys.exit()
 			subnetcheck = 0
-			for subnetwork in mnetsubnets:
-				if addressInNetwork(sshdeviceip,subnetwork) == True:
-					subnetcheck = 1
-				if subnetcheck == 1:
-					sys.exit()
+			subnetcheck2 = 0
+			if sshdeviceip == None or sshdeviceip == '':
+				subnetcheck2 = 0
+			else:
+				subnetcheck2 = 1
+			if subnetcheck2 == 1:
+				for subnetwork in mnetsubnets:
+						if addressInNetwork(sshdeviceip,subnetwork) == True:
+							subnetcheck = 1
 			# FSM Templates
-			cdpdevicetype = cdpvendor.lower() + '_' + cdptype.lower()
-			if "cisco_ios" in cdpdevicetype.lower():
-				fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_cdp_nei_detail.template"
-			if "cisco_xe" in cdpdevicetype.lower():
-				fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_cdp_nei_detail.template"
-			if "cisco_nxos" in cdpdevicetype.lower():
-				fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_cdp_nei_detail.template"
-			fsmtemplatename = cdpdevicetype.lower() + '_fsmshowcdp.fsm'
-			if not os.path.isfile(fsmtemplatename):
-				DOWNLOAD_FILE(fsmshowcdpurl, fsmtemplatename)
-			fsmtemplatenamefile = open(fsmtemplatename)
-			fsmcdptemplate = textfsm.TextFSM(fsmtemplatenamefile)
-			tempfilelist.append(fsmtemplatenamefile)
-			fsmtemplatenamefile.close()
-			# CDP Check
-			try:
-				for username in usernamelist:
-					try:
-						sshusername = username.get('sshusername').encode('utf-8')
-						sshpassword = username.get('sshpassword').encode('utf-8')
-						enablesecret = username.get('enablesecret').encode('utf-8')
-					except:
-						sshusername = username.get('sshusername')
-						sshpassword = username.get('sshpassword')
-						enablesecret = username.get('enablesecret')
-					try:
-						sshnet_connect = ConnectHandler(device_type=sshdevicetype, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret, timeout=3)
-						break
-					except Exception as e:
-						if 'Authentication' in e:
-							continue
-						else:
-							sshdevicetypetelnet = sshdevicetype + '_telnet'
-							try:
-								sshnet_connect = ConnectHandler(device_type=sshdevicetypetelnet, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret, timeout=3)
-								break
-							except:
+			if subnetcheck == 1:
+				cdpdevicetype = cdpvendor.lower() + '_' + cdptype.lower()
+				if "cisco_ios" in cdpdevicetype.lower():
+					fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_cdp_nei_detail.template"
+				if "cisco_xe" in cdpdevicetype.lower():
+					fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_cdp_nei_detail.template"
+				if "cisco_nxos" in cdpdevicetype.lower():
+					fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_cdp_nei_detail.template"
+				fsmtemplatename = cdpdevicetype.lower() + '_fsmshowcdp.fsm'
+				if not os.path.isfile(fsmtemplatename):
+					DOWNLOAD_FILE(fsmshowcdpurl, fsmtemplatename)
+				fsmtemplatenamefile = open(fsmtemplatename)
+				fsmcdptemplate = textfsm.TextFSM(fsmtemplatenamefile)
+				tempfilelist.append(fsmtemplatenamefile)
+				fsmtemplatenamefile.close()
+				# CDP Check
+				try:
+					for username in usernamelist:
+						try:
+							sshusername = username.get('sshusername').encode('utf-8')
+							sshpassword = username.get('sshpassword').encode('utf-8')
+							enablesecret = username.get('enablesecret').encode('utf-8')
+						except:
+							sshusername = username.get('sshusername')
+							sshpassword = username.get('sshpassword')
+							enablesecret = username.get('enablesecret')
+						try:
+							sshnet_connect = ConnectHandler(device_type=sshdevicetype, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret, timeout=3)
+							break
+						except Exception as e:
+							if 'Authentication' in e:
 								continue
-			except:
-				pass
-			skipcheck = 0
-			try:
-				if sshnet_connect:
-					cdpdiscoverybl.append(sshdeviceip)
+							else:
+								sshdevicetypetelnet = sshdevicetype + '_telnet'
+								try:
+									sshnet_connect = ConnectHandler(device_type=sshdevicetypetelnet, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret, timeout=3)
+									break
+								except:
+									continue
+				except:
 					pass
-				else:
+				skipcheck = 0
+				try:
+					if sshnet_connect:
+						cdpdiscoverybl.append(sshdeviceip)
+						pass
+					else:
+						skipcheck = 1
+				except:
+					print 'Error with connecting to ' + sshdeviceip + '. Skipping Check'	
 					skipcheck = 1
-			except:
-				print 'Error with connecting to ' + sshdeviceip + '. Skipping Check'	
-				skipcheck = 1
-			if skipcheck == 0:
-				sshdevicehostname = sshnet_connect.find_prompt()
-				sshdevicehostname = sshdevicehostname.strip('#')
-				if '>' in sshdevicehostname:
-					sshnet_connect.enable()
-					sshdevicehostname = sshdevicehostname.strip('>')
+				if skipcheck == 0:
 					sshdevicehostname = sshnet_connect.find_prompt()
 					sshdevicehostname = sshdevicehostname.strip('#')
-				print 'CDP discovery starting on secondary device ' + sshdevicehostname
-				#Show Interfaces
-				sshcommand = showcdp
-				sshresult = sshnet_connect.send_command(sshcommand)
-				hcshowcdp = fsmcdptemplate.ParseText(sshresult)
-				for cdpnei in hcshowcdp:
-					cdpalreadyexists = 0
-					cdpnexthop = 0
-					cdpdevicedict = {}
-					cdpneiname = cdpnei[0]
-					cdpneiip = cdpnei[1]
-					cdpneidevice = cdpnei[2]
-					cdpneiosfull = cdpnei[5]
-					if 'cisco' in cdpneidevice.lower():
-						cdpneivend = 'cisco'
-						if re.match('.*\iosxe|xe.*',cdpneiosfull.lower()):
-							cdpneios = 'xe'
-							cdpnexthop = 1
-						if re.match('.*ios(?!xe).*',cdpneiosfull.lower()):
-							cdpneios = 'ios'
-							cdpnexthop = 1
-						if re.match('.*nx-os|nexus.*',cdpneiosfull.lower()):
-							cdpneios = 'nxos'
-							cdpnexthop = 1
-						for cdpdevice in cdpdevicecomplete:
-							cdpdeviceip = cdpdevice.get('Device IPs').encode('utf-8')
-							if cdpdeviceip == cdpneiip:
-								cdpalreadyexists = 1
-						if cdpalreadyexists == 0 and cdpnexthop == 1:
-							cdpdevicedict['Device IPs'] = cdpneiip.decode('utf-8')
-							cdpdevicedict['Vendor'] = cdpneivend.decode('utf-8')
-							cdpdevicedict['Type'] = cdpneios.decode('utf-8')
-							cdpdevicecomplete.append(cdpdevicedict)
-							print 'Found new device, adding to list'
-				cdpdevicediscovery.append(cdpip.decode('utf-8'))
+					if '>' in sshdevicehostname:
+						sshnet_connect.enable()
+						sshdevicehostname = sshdevicehostname.strip('>')
+						sshdevicehostname = sshnet_connect.find_prompt()
+						sshdevicehostname = sshdevicehostname.strip('#')
+					print 'CDP discovery starting on secondary device ' + sshdevicehostname
+					#Show Interfaces
+					sshcommand = showcdp
+					sshresult = sshnet_connect.send_command(sshcommand)
+					hcshowcdp = fsmcdptemplate.ParseText(sshresult)
+					for cdpnei in hcshowcdp:
+						cdpalreadyexists = 0
+						cdpnexthop = 0
+						cdpdevicedict = {}
+						cdpneiname = cdpnei[0]
+						cdpneiip = cdpnei[1]
+						cdpneidevice = cdpnei[2]
+						cdpneiosfull = cdpnei[5]
+						if 'cisco' in cdpneidevice.lower():
+							cdpneivend = 'cisco'
+							if re.match('.*\iosxe|xe.*',cdpneiosfull.lower()):
+								cdpneios = 'xe'
+								cdpnexthop = 1
+							if re.match('.*ios(?!xe).*',cdpneiosfull.lower()):
+								cdpneios = 'ios'
+								cdpnexthop = 1
+							if re.match('.*nx-os|nexus.*',cdpneiosfull.lower()):
+								cdpneios = 'nxos'
+								cdpnexthop = 1
+							for cdpdevice in cdpdevicecomplete:
+								cdpdeviceip = cdpdevice.get('Device IPs').encode('utf-8')
+								if cdpdeviceip == cdpneiip:
+									cdpalreadyexists = 1
+							if cdpalreadyexists == 0 and cdpnexthop == 1:
+								cdpdevicedict['Device IPs'] = cdpneiip.decode('utf-8')
+								cdpdevicedict['Vendor'] = cdpneivend.decode('utf-8')
+								cdpdevicedict['Type'] = cdpneios.decode('utf-8')
+								cdpdevicecomplete.append(cdpdevicedict)
+								print 'Found new device, adding to list'
+					cdpdevicediscovery.append(cdpip.decode('utf-8'))
 		except IndexError:
 			print 'Could not connect to device ' + sshdeviceip
 			try:
