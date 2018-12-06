@@ -23,6 +23,8 @@ import sys
 import json
 import logging
 import datetime
+import socket
+import struct
 from decimal import *
 
 # FIXES
