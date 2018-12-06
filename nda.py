@@ -132,7 +132,7 @@ try:
 except ImportError:
 	xlhelperinstallstatus = raw_input ('xlhelper module is missing, would you like to automatically install? (Y/N): ')
 	if 'y' in xlhelperinstallstatus.lower():
-		os.system('python -m pip install git+git://github.com/routeallthings/xlhelper.git')
+		os.system('python -m pip install git+https://github.com/routeallthings/xlhelper.git')
 		import xlhelper
 	else:
 		print 'You selected an option other than yes. Please be aware that this script requires the use of xlhelper. Please install manually and retry'
@@ -328,7 +328,7 @@ if devicediscoverydepthv == None:
 devicediscoverysshtypev = configdict.get('DeviceDiscoverySSHType')
 devicediscoverysshtypev = devicediscoverysshtypev.lower()
 if devicediscoverysshtypev == None:
-	devicediscoverysshtypev = 'cisco_ios'
+	devicediscoverysshtypev = 'ios'
 if 'nxos' in devicediscoverysshtypev.lower() or 'ios' in devicediscoverysshtypev.lower() or 'xe' in devicediscoverysshtypev.lower():
 	devicediscoverysshtypev = devicediscoverysshtypev.encode('utf-8')
 	if not 'cisco' in devicediscoverysshtypev:
@@ -449,6 +449,13 @@ if temperature == None:
 	temperature = 'Y'
 # End of Config Variables
 # Start of Functions
+
+def addressInNetwork(ip,net):
+   "Is an address in a network"
+   ipaddr = struct.unpack('L',socket.inet_aton(ip))[0]
+   netaddr,bits = net.split('/')
+   netmask = struct.unpack('L',socket.inet_aton(netaddr))[0] & ((2L<<int(bits)-1) - 1)
+   return ipaddr & netmask == netmask
 
 def DOWNLOAD_FILE(url,saveas):
     # NOTE the stream=True parameter
@@ -1551,6 +1558,12 @@ def DEF_CDPDISCOVERY(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv):
 			for cdpd in cdpdiscoverybl:
 				if cdpd == sshdeviceip:
 					sys.exit()
+			subnetcheck = 0
+			for subnetwork in mnetsubnets:
+				if addressInNetwork(sshdeviceip,subnetwork) == True:
+					subnetcheck = 1
+				if subnetcheck == 1:
+					sys.exit()
 			# FSM Templates
 			cdpdevicetype = cdpvendor.lower() + '_' + cdptype.lower()
 			if "cisco_ios" in cdpdevicetype.lower():
@@ -1578,7 +1591,7 @@ def DEF_CDPDISCOVERY(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv):
 						sshpassword = username.get('sshpassword')
 						enablesecret = username.get('enablesecret')
 					try:
-						sshnet_connect = ConnectHandler(device_type=sshdevicetype, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret)
+						sshnet_connect = ConnectHandler(device_type=sshdevicetype, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret, timeout=3)
 						break
 					except Exception as e:
 						if 'Authentication' in e:
@@ -1586,7 +1599,7 @@ def DEF_CDPDISCOVERY(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv):
 						else:
 							sshdevicetypetelnet = sshdevicetype + '_telnet'
 							try:
-								sshnet_connect = ConnectHandler(device_type=sshdevicetypetelnet, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret)
+								sshnet_connect = ConnectHandler(device_type=sshdevicetypetelnet, ip=sshdeviceip, username=sshusername, password=sshpassword, secret=enablesecret, timeout=3)
 								break
 							except:
 								continue
@@ -1597,9 +1610,11 @@ def DEF_CDPDISCOVERY(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv):
 				if sshnet_connect:
 					cdpdiscoverybl.append(sshdeviceip)
 					pass
+				else:
+					skipcheck = 1
 			except:
 				print 'Error with connecting to ' + sshdeviceip + '. Skipping Check'	
-				skipcheck == 1
+				skipcheck = 1
 			if skipcheck == 0:
 				sshdevicehostname = sshnet_connect.find_prompt()
 				sshdevicehostname = sshdevicehostname.strip('#')
