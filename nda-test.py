@@ -6,8 +6,14 @@
 
 # nda.py
 
+# Used for AutoUpdate
+import urllib 
+import zipfile
+
 # Add syspath variable (for executing outside of root folder)
-import inspect, os.path, sys, urllib
+import inspect
+import os.path
+import sys
 filename = inspect.getframeinfo(inspect.currentframe()).filename
 rootpath = os.path.dirname(os.path.abspath(filename))
 sys.path.append(os.path.join(rootpath,'modules'))
@@ -80,67 +86,12 @@ if internettest == 1:
 		if currentversion == webversion:
 			print 'NDA is already up to date, skipping update'
 		else:	
-			baseurlpath = 'https://github.com/routeallthings/Network-Documentation-Automation/raw/master'
-			# For files in modules, update all files
-			filesindir = [f for f in os.listdir(modulepath) if os.path.isfile(os.path.join(modulepath, f))]
-			suburlpath = baseurlpath + '/modules'
-			subfpath = modulepath
-			try:
-				for file in filesindir:
-					suburlfile = suburlpath + '/' + file
-					subpathfile = os.path.join(subfpath,file)
-					downloadfile(suburlfile,subpathfile)
-					print 'Updated ' + subpathfile
-			except:
-				print 'Error at updating file ' + file + '. Please check file permissions'
-			# For files in toolkit update all files
-			filesindir = [f for f in os.listdir(toolkitpath) if os.path.isfile(os.path.join(toolkitpath, f))]
-			suburlpath = baseurlpath + '/toolkit'
-			subfpath = toolkitpath
-			try:
-				for file in filesindir:
-					suburlfile = suburlpath + '/' + file
-					subpathfile = os.path.join(subfpath,file)
-					downloadfile(suburlfile,subpathfile)
-					print 'Updated ' + subpathfile
-			except:
-				print 'Error at updating file ' + file + '. Please check file permissions'
-			# For file in macdb update all files
-			filesindir = [f for f in os.listdir(macdbpath) if os.path.isfile(os.path.join(macdbpath, f))]
-			suburlpath = baseurlpath + '/macdb'
-			subfpath = macdbpath
-			try:
-				for file in filesindir:
-					suburlfile = suburlpath + '/' + file
-					subpathfile = os.path.join(subfpath,file)
-					downloadfile(suburlfile,subpathfile)
-					print 'Updated ' + subpathfile
-			except:
-				print 'Error at updating file ' + file + '. Please check file permissions'
-			# For files in templates update all files
-			filesindir = [f for f in os.listdir(templatepath) if os.path.isfile(os.path.join(templatepath, f))]
-			suburlpath = baseurlpath + '/templates'
-			subfpath = templatepath
-			try:
-				for file in filesindir:
-					suburlfile = suburlpath + '/' + file
-					subpathfile = os.path.join(subfpath,file)
-					downloadfile(suburlfile,subpathfile)
-					print 'Updated ' + subpathfile
-			except:
-				print 'Error at updating file ' + file + '. Please check file permissions'
-			# For files in root update all files
-			filesindir = [f for f in os.listdir(rootpath) if os.path.isfile(os.path.join(rootpath, f))]
-			suburlpath = baseurlpath
-			subfpath = rootpath
-			try:
-				for file in filesindir:
-					suburlfile = suburlpath + '/' + file
-					subpathfile = os.path.join(subfpath,file)
-					downloadfile(suburlfile,subpathfile)
-					print 'Updated ' + subpathfile
-			except:
-				print 'Error at updating file ' + file + '. Please check file permissions'
+			basezipurl = 'https://github.com/routeallthings/Network-Documentation-Automation/archive/master.zip'
+			basezippath = os.path.join(rootpath,'master.zip')
+			downloadfile(basezipurl,basezippath)
+			with zipfile.ZipFile(basezippath, 'r') as zip_ref:
+				zip_ref.extractall(rootpath)
+			os.remove(basezippath)
 			print 'Completed Auto-Update'
 			print 'Closing in 5 seconds, please relaunch script'
 			time.sleep(5)
