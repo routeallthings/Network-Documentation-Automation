@@ -24,15 +24,15 @@ from downloadfile import *
 # Get root path and add macdb library and template library
 import inspect, os.path, sys
 filename = inspect.getframeinfo(inspect.currentframe()).filename
-rootpath = os.path.dirname(os.path.abspath(filename))
+hcrootpath = os.path.dirname(os.path.abspath(filename))
 # MAC OUI Library
-rpath,lastfolder = os.path.split(rootpath)
+hcrpath,lastfolder = os.path.split(hcrootpath)
 lastfolder = 'macdb'
-macdbpath = os.path.join(rpath,lastfolder)
+macdbpath = os.path.join(hcrpath,lastfolder)
 # Template Library
-rpath,lastfolder = os.path.split(rootpath)
+hcrpath,lastfolder = os.path.split(hcrootpath)
 lastfolder = 'templates'
-templatepath = os.path.join(rpath,lastfolder)
+templatepath = os.path.join(hcrpath,lastfolder)
 
 def healthcheck(sshdevice,usernamelist,exportlocation):
 	# Definition Variables

@@ -27,15 +27,15 @@ from removeprefix import *
 # Get root path and add macdb library and template library
 import inspect, os.path, sys
 filename = inspect.getframeinfo(inspect.currentframe()).filename
-rootpath = os.path.dirname(os.path.abspath(filename))
+gdrootpath = os.path.dirname(os.path.abspath(filename))
 # MAC OUI Library
-rpath,lastfolder = os.path.split(rootpath)
+gdrpath,lastfolder = os.path.split(gdrootpath)
 lastfolder = 'macdb'
-macdbpath = os.path.join(rpath,lastfolder)
+macdbpath = os.path.join(gdrpath,lastfolder)
 # Template Library
-rpath,lastfolder = os.path.split(rootpath)
+gdrpath,lastfolder = os.path.split(gdrootpath)
 lastfolder = 'templates'
-templatepath = os.path.join(rpath,lastfolder)
+templatepath = os.path.join(gdrpath,lastfolder)
 
 def writeoutput(sshcommand,sshresult,sshdevicehostname,outputfolder):
 	sshcommandfile = sshcommand.replace(' ','')

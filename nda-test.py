@@ -72,15 +72,15 @@ time.sleep(1)
 if internettest == 1:
 	autoupdatev = raw_input('Auto-Update: Test Passed, would you like to update (Y/N)?:')
 	if 'y' in autoupdatev.lower():
-		versioncheckurl = 'https://github.com/routeallthings/Network-Documentation-Automation/blob/master/version.txt'
-		versioncheckpath = rootpath + '/version.txt'
+		versioncheckurl = 'https://github.com/routeallthings/Network-Documentation-Automation/raw/master/version.txt'
+		versioncheckpath = os.path.join(rootpath,'version.txt')
 		with open(versioncheckpath, "r") as currentver:
-			currentversion = currentver.readlines()
+			currentversion = currentver.read()
 		webversion = urllib.urlopen(versioncheckurl).read()
 		if currentversion == webversion:
 			print 'NDA is already up to date, skipping update'
 		else:	
-			baseurlpath = 'https://github.com/routeallthings/Network-Documentation-Automation/blob/master'
+			baseurlpath = 'https://github.com/routeallthings/Network-Documentation-Automation/raw/master'
 			# For files in modules, update all files
 			filesindir = [f for f in os.listdir(modulepath) if os.path.isfile(os.path.join(modulepath, f))]
 			suburlpath = baseurlpath + '/modules'
@@ -88,7 +88,7 @@ if internettest == 1:
 			try:
 				for file in filesindir:
 					suburlfile = suburlpath + '/' + file
-					subpathfile = subfpath + '/' + file
+					subpathfile = os.path.join(subfpath,file)
 					downloadfile(suburlfile,subpathfile)
 					print 'Updated ' + subpathfile
 			except:
@@ -100,7 +100,7 @@ if internettest == 1:
 			try:
 				for file in filesindir:
 					suburlfile = suburlpath + '/' + file
-					subpathfile = subfpath + '/' + file
+					subpathfile = os.path.join(subfpath,file)
 					downloadfile(suburlfile,subpathfile)
 					print 'Updated ' + subpathfile
 			except:
@@ -112,7 +112,7 @@ if internettest == 1:
 			try:
 				for file in filesindir:
 					suburlfile = suburlpath + '/' + file
-					subpathfile = subfpath + '/' + file
+					subpathfile = os.path.join(subfpath,file)
 					downloadfile(suburlfile,subpathfile)
 					print 'Updated ' + subpathfile
 			except:
@@ -124,7 +124,19 @@ if internettest == 1:
 			try:
 				for file in filesindir:
 					suburlfile = suburlpath + '/' + file
-					subpathfile = subfpath + '/' + file
+					subpathfile = os.path.join(subfpath,file)
+					downloadfile(suburlfile,subpathfile)
+					print 'Updated ' + subpathfile
+			except:
+				print 'Error at updating file ' + file + '. Please check file permissions'
+			# For files in root update all files
+			filesindir = [f for f in os.listdir(rootpath) if os.path.isfile(os.path.join(rootpath, f))]
+			suburlpath = baseurlpath
+			subfpath = rootpath
+			try:
+				for file in filesindir:
+					suburlfile = suburlpath + '/' + file
+					subpathfile = os.path.join(subfpath,file)
 					downloadfile(suburlfile,subpathfile)
 					print 'Updated ' + subpathfile
 			except:
