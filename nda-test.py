@@ -7,7 +7,7 @@
 # nda.py
 
 # Add syspath variable (for executing outside of root folder)
-import inspect, os.path, sys
+import inspect, os.path, sys, urllib
 filename = inspect.getframeinfo(inspect.currentframe()).filename
 rootpath = os.path.dirname(os.path.abspath(filename))
 sys.path.append(os.path.join(rootpath,'modules'))
@@ -63,7 +63,7 @@ print 'Please fill in the configuration tab on the templated'
 print 'XLSX sheet, along with all the data that you want to test.'
 print '##########################################################'
 print ''
-# Auto-Update Section
+# Start of Auto-Update
 # Check for Internet
 print 'Auto-Update: Testing for Internet'
 testserver = "www.google.com"
@@ -72,26 +72,68 @@ time.sleep(1)
 if internettest == 1:
 	autoupdatev = raw_input('Auto-Update: Test Passed, would you like to update (Y/N)?:')
 	if 'y' in autoupdatev.lower():
-		baseurlpath = 'https://github.com/routeallthings/Network-Documentation-Automation/blob/master'
-		# For file in modules, get module
-		filesindir = [f for f in os.listdir(modulepath) if os.path.isfile(os.path.join(modulepath, f))]
-		suburlpath = baseurlpath + '/modules'
-		subfpath = modulepath
-		try:
-			for file in onlyfiles:
-				suburlfile = suburlpath + '/' + file
-				subpathfile = subfpath + '/' + file
-				downloadfile(suburlfile,subpathfile)
-		except:
-			print 1
-		'''
-		downloadfile(url,saveas)
-		'''
-		
-		
+		versioncheckurl = 'https://github.com/routeallthings/Network-Documentation-Automation/blob/master/version.txt'
+		versioncheckpath = rootpath + '/version.txt'
+		with open(versioncheckpath, "r") as currentver:
+			currentversion = currentver.readlines()
+		webversion = urllib.urlopen(versioncheckurl).read()
+		if currentversion == webversion:
+			print 'NDA is already up to date, skipping update'
+		else:	
+			baseurlpath = 'https://github.com/routeallthings/Network-Documentation-Automation/blob/master'
+			# For files in modules, update all files
+			filesindir = [f for f in os.listdir(modulepath) if os.path.isfile(os.path.join(modulepath, f))]
+			suburlpath = baseurlpath + '/modules'
+			subfpath = modulepath
+			try:
+				for file in filesindir:
+					suburlfile = suburlpath + '/' + file
+					subpathfile = subfpath + '/' + file
+					downloadfile(suburlfile,subpathfile)
+					print 'Updated ' + subpathfile
+			except:
+				print 'Error at updating file ' + file + '. Please check file permissions'
+			# For files in toolkit update all files
+			filesindir = [f for f in os.listdir(toolkitpath) if os.path.isfile(os.path.join(toolkitpath, f))]
+			suburlpath = baseurlpath + '/toolkit'
+			subfpath = toolkitpath
+			try:
+				for file in filesindir:
+					suburlfile = suburlpath + '/' + file
+					subpathfile = subfpath + '/' + file
+					downloadfile(suburlfile,subpathfile)
+					print 'Updated ' + subpathfile
+			except:
+				print 'Error at updating file ' + file + '. Please check file permissions'
+			# For file in macdb update all files
+			filesindir = [f for f in os.listdir(macdbpath) if os.path.isfile(os.path.join(macdbpath, f))]
+			suburlpath = baseurlpath + '/macdb'
+			subfpath = macdbpath
+			try:
+				for file in filesindir:
+					suburlfile = suburlpath + '/' + file
+					subpathfile = subfpath + '/' + file
+					downloadfile(suburlfile,subpathfile)
+					print 'Updated ' + subpathfile
+			except:
+				print 'Error at updating file ' + file + '. Please check file permissions'
+			# For files in templates update all files
+			filesindir = [f for f in os.listdir(templatepath) if os.path.isfile(os.path.join(templatepath, f))]
+			suburlpath = baseurlpath + '/templates'
+			subfpath = templatepath
+			try:
+				for file in filesindir:
+					suburlfile = suburlpath + '/' + file
+					subpathfile = subfpath + '/' + file
+					downloadfile(suburlfile,subpathfile)
+					print 'Updated ' + subpathfile
+			except:
+				print 'Error at updating file ' + file + '. Please check file permissions'
+			print 'Completed Auto-Update'
 if internettest == 0:
 	print 'Auto-Update: Test Failed, skipping update'
-
+# End of Auto-Update
+	
 # Getting config excel file
 print '----Questions that need answering----'
 excelfilelocation = raw_input('File to load the excel data from (e.g. C:/Python27/nda-config.xlsx):')
