@@ -142,6 +142,9 @@ if internettest == 1:
 			except:
 				print 'Error at updating file ' + file + '. Please check file permissions'
 			print 'Completed Auto-Update'
+			print 'Closing in 5 seconds, please relaunch script'
+			time.sleep(5)
+			sys.exit
 if internettest == 0:
 	print 'Auto-Update: Test Failed, skipping update'
 # End of Auto-Update
