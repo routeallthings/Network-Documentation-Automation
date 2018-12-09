@@ -9,6 +9,7 @@
 # Used for AutoUpdate
 import urllib 
 import zipfile
+import shutil
 
 # Add syspath variable (for executing outside of root folder)
 import inspect
@@ -39,6 +40,7 @@ from addressinnetwork import *
 from downloadfile import *
 from removeprefix import *
 from internetcheck import *
+from copytree import *
 
 # Start of NDA Specific Functions
 
@@ -90,12 +92,25 @@ if internettest == 1:
 			basezippath = os.path.join(rootpath,'master.zip')
 			downloadfile(basezipurl,basezippath)
 			with zipfile.ZipFile(basezippath, 'r') as zip_ref:
-				zip_ref.extractall(rootpath)
+				for file in zip_ref.namelist():
+					if file.startswith('Network-Documentation-Automation-master/'):
+						filepath,filename = os.path.split(file)
+						finalfilepath = os.path.join(rootpath,filename)
+						# Extract folder to \Network-Documentation-Automation-master
+						zip_ref.extract(file, rootpath)
+						# Print output
+						print 'Updating ' + finalfilepath
+			# Filepath variable
+			filepath = os.path.join(rootpath,'Network-Documentation-Automation-master')			
+			# Move contents to root
+			copytree(filepath,rootpath)
+			# Delete old folder and zip file
+			shutil.rmtree(filepath)
 			os.remove(basezippath)
 			print 'Completed Auto-Update'
 			print 'Closing in 5 seconds, please relaunch script'
 			time.sleep(5)
-			sys.exit
+			sys.exit()
 if internettest == 0:
 	print 'Auto-Update: Test Failed, skipping update'
 # End of Auto-Update
