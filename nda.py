@@ -494,7 +494,7 @@ if __name__ == "__main__":
 		if second > maxtimeout:
 			runningthreads = False
 			print 'Exiting due to maximum timeout reached. If this is due to the quantity of devices, please increase your timeout value. Currently its ' + str(maxtimeout) + '.' 
-		if threading.activeCount() == startofthread:
+		if threading.activeCount() <= startofthread:
 			runningthreads = False
 		time.sleep(1)
 		second = second + 1
