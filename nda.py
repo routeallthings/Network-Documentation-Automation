@@ -27,9 +27,12 @@ templatepath = os.path.join(rootpath,'templates')
 # add external module paths
 externalpath = os.path.join(rootpath,'external')
 graphvizpath = os.path.join(externalpath,'graphviz')
+graphvizbinpath = os.path.join(graphvizpath,'bin')
 mnetsuitepath = os.path.join(externalpath,'mnetsuite')
-# add external module to syspath
+# add mnet module to syspath
 sys.path.append(mnetsuitepath)
+# add graphviz to system variables
+os.environ["PATH"] = os.environ["PATH"] + ";" + graphvizbinpath
 
 # Import other required native objects
 
@@ -48,8 +51,8 @@ from removeprefix import *
 from internetcheck import *
 from copytree import *
 
-# From External Import
-from external.
+# Import external modules
+import mnetsuite_routeallthings
 
 # Start of NDA Specific Functions
 
