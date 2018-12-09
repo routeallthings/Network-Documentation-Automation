@@ -155,19 +155,3 @@ except ImportError:
 		print 'Exiting in 5 seconds'
 		time.sleep(5)
 		sys.exit()	
-		
-# MNETSUITE (https://github.com/MJL85/mnet/tree/master/mnetsuite)---- THIS HAS BEEN MODIFIED IN ROUTEALLTHINGS FORK
-# CDP/LLDP Discovery and Mapping method
-
-try:
-	import mnetsuite_routeallthings
-except ImportError:
-	mnetinstallstatus = raw_input ('mnetsuite module (routeallthings variant) is missing, would you like to automatically install? (Y/N): ')
-	if 'y' in mnetinstallstatus.lower():
-		os.system('python -m pip install git+git://github.com/routeallthings/mnet_routeallthings.git')
-		import mnetsuite_routeallthings
-	else:
-		print 'You selected an option other than yes. Please be aware that this script requires the use of mnetsuite. Please install manually and retry'
-		print 'Exiting in 5 seconds'
-		time.sleep(5)
-		sys.exit()

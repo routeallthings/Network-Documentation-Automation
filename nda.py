@@ -24,6 +24,12 @@ modulepath = os.path.join(rootpath,'modules')
 toolkitpath = os.path.join(rootpath,'toolkit')
 macdbpath = os.path.join(rootpath,'macdb')
 templatepath = os.path.join(rootpath,'templates')
+# add external module paths
+externalpath = os.path.join(rootpath,'external')
+graphvizpath = os.path.join(externalpath,'graphviz')
+mnetsuitepath = os.path.join(externalpath,'mnetsuite')
+# add external module to syspath
+sys.path.append(mnetsuitepath)
 
 # Import other required native objects
 
@@ -41,6 +47,9 @@ from downloadfile import *
 from removeprefix import *
 from internetcheck import *
 from copytree import *
+
+# From External Import
+from external.
 
 # Start of NDA Specific Functions
 
