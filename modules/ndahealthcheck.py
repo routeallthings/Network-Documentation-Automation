@@ -46,32 +46,28 @@ def healthcheck(sshdevice,usernamelist,exportlocation):
 	### FSM Templates ###
 	# FSM Show Interface
 	if "cisco_ios" in sshdevicetype:
-		fsmshowinturl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_interfaces_health.template"
+		templatename = "cisco_ios_show_interfaces_health.template"
 	if "cisco_xe" in sshdevicetype:
-		fsmshowinturl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_interfaces_health.template"
+		templatename = "cisco_ios_show_interfaces_health.template"
 	if "cisco_nxos" in sshdevicetype:
-		fsmshowinturl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_interfaces_health.template"
-	fsmtemplatename = sshdevicetype + '_fsmshowint_health.fsm'
-	if not os.path.isfile(fsmtemplatename):
-		downloadfile(fsmshowinturl, fsmtemplatename)
-	fsmtemplatenamefile = open(fsmtemplatename)
-	fsminttemplate = textfsm.TextFSM(fsmtemplatenamefile)
-	tempfilelist.append(fsmtemplatename)
-	fsmtemplatenamefile.close()
+		templatename = "cisco_nxos_show_interfaces_health.template"
+	# Create template file path
+	templatefile = os.path.join(templatepath,templatename)
+	# Open and convert to TextFSM
+	with open(templatefile, 'r') as fsmtemplatenamefile:
+		fsminttemplate = textfsm.TextFSM(fsmtemplatenamefile)
 	# FSM Show Temperature
 	if "cisco_ios" in sshdevicetype:
-		fsmshowtempurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_temp_health.template"
+		templatename = "cisco_ios_show_temp_health.template"
 	if "cisco_xe" in sshdevicetype:
-		fsmshowtempurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_temp_health.template"
+		templatename = "cisco_ios_show_temp_health.template"
 	if "cisco_nxos" in sshdevicetype:
-		fsmshowtempurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_temp_health.template"	
-	fsmtemplatename = sshdevicetype + '_fsmshowtemp_health.fsm'
-	if not os.path.isfile(fsmtemplatename):
-		downloadfile(fsmshowtempurl, fsmtemplatename)
-	fsmtemplatenamefile = open(fsmtemplatename)
-	fsmtemptemplate = textfsm.TextFSM(fsmtemplatenamefile)
-	tempfilelist.append(fsmtemplatename)
-	fsmtemplatenamefile.close()
+		templatename = "cisco_nxos_show_temp_health.template"	
+	# Create template file path
+	templatefile = os.path.join(templatepath,templatename)
+	# Open and store in memory
+	with open(templatefile, 'r') as fsmtemplatenamefile:
+		fsmtemptemplate = textfsm.TextFSM(fsmtemplatenamefile)
 	#Start Connection
 	try:
 		for username in usernamelist:
@@ -97,12 +93,10 @@ def healthcheck(sshdevice,usernamelist,exportlocation):
 					except:
 						continue
 		try:
-			if not sshnet_connect:
-				print 'Error with connecting to ' + sshdeviceip
-				return False
+			sshnet_connect
 		except:
 			print 'Error with connecting to ' + sshdeviceip
-			return False
+			sys.exit()
 		sshdevicehostname = sshnet_connect.find_prompt()
 		sshdevicehostname = sshdevicehostname.strip('#')
 		if '>' in sshdevicehostname:

@@ -89,8 +89,10 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 					except:
 						continue
 		try:
-			if not sshnet_connect:
-				sys.exit()
+			sshnet_connect
+		except NameError:
+			print 'Error with connecting to the device ' + sshdeviceip + '. Login was unsuccessful. Please validate out of band.'
+			sys.exit()
 		except Exception as e:
 			print 'Error with connecting to the device ' + sshdeviceip + '. Error is ' + str(e)
 			sys.exit()
@@ -101,7 +103,7 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 			sshdevicehostname = sshdevicehostname.strip('>')
 			sshdevicehostname = sshnet_connect.find_prompt()
 			sshdevicehostname = sshdevicehostname.strip('#')
-		print 'Successfully connected to ' + sshdevicehostname
+		print 'Successfully connected to ' + sshdevicehostname + ' (' + sshdeviceip + ')'
 		print 'Gathering data from ' + sshdevicehostname
 		#Create output folder if none exists
 		outputfolder = exportlocation + '\\' + sshdevicehostname
@@ -112,112 +114,96 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 		#################################################################
 		# Show Inventory
 		if "cisco_ios" in sshdevicetype.lower():
-			fsmshowinvurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_inventory.template"
+			templatename = "cisco_ios_show_inventory.template"
 		if "cisco_xe" in sshdevicetype.lower():
-			fsmshowinvurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_inventory.template"
+			templatename = "cisco_ios_show_inventory.template"
 		if "cisco_nxos" in sshdevicetype.lower():
-			fsmshowinvurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_inventory.template"
-		fsmtemplatename = sshdevicetype.lower() + '_fsmshowinventory.fsm'
-		if not os.path.isfile(fsmtemplatename):
-			downloadfile(fsmshowinvurl, fsmtemplatename)
-		fsmtemplatenamefile = open(fsmtemplatename)
-		fsminvtemplate = textfsm.TextFSM(fsmtemplatenamefile)
-		tempfilelist.append(fsmtemplatename)
-		fsmtemplatenamefile.close()
+			templatename = "cisco_nxos_show_inventory.template"
+		# Create template file path
+		templatefile = os.path.join(templatepath,templatename)
+		# Open and store in memory
+		with open(templatefile, 'r') as fsmtemplatenamefile:
+			fsminvtemplate = textfsm.TextFSM(fsmtemplatenamefile)
 		# IP Arp Table
 		if "cisco_ios" in sshdevicetype.lower():
-			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_iparp.template"
+			templatename = "cisco_ios_show_iparp.template"
 		if "cisco_xe" in sshdevicetype.lower():
-			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_iparp.template"
+			templatename = "cisco_ios_show_iparp.template"
 		if "cisco_nxos" in sshdevicetype.lower():
-			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_iparp.template"
-		fsmtemplatename = sshdevicetype.lower() + '_fsmiparptable.fsm'
-		if not os.path.isfile(fsmtemplatename):
-			downloadfile(fsmshowurl, fsmtemplatename)
-		fsmtemplatenamefile = open(fsmtemplatename)
-		fsmarptemplate = textfsm.TextFSM(fsmtemplatenamefile)
-		tempfilelist.append(fsmtemplatename)
-		fsmtemplatenamefile.close()
+			templatename = "cisco_nxos_show_iparp.template"
+		# Create template file path
+		templatefile = os.path.join(templatepath,templatename)
+		# Open and store in memory
+		with open(templatefile, 'r') as fsmtemplatenamefile:
+			fsmarptemplate = textfsm.TextFSM(fsmtemplatenamefile)
 		# Mac Table Lists
 		if "cisco_ios" in sshdevicetype.lower():
-			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_mac.template"
+			templatename = "cisco_ios_show_mac.template"
 		if "cisco_xe" in sshdevicetype.lower():
-			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_mac.template"
+			templatename = "cisco_ios_show_mac.template"
 		if "cisco_nxos" in sshdevicetype.lower():
-			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_mac.template"
-		fsmtemplatename = sshdevicetype.lower() + '_fsmmactable.fsm'
-		if not os.path.isfile(fsmtemplatename):
-			downloadfile(fsmshowurl, fsmtemplatename)
-		fsmtemplatenamefile = open(fsmtemplatename)
-		fsmmactemplate = textfsm.TextFSM(fsmtemplatenamefile)
-		tempfilelist.append(fsmtemplatename)
-		fsmtemplatenamefile.close()
+			templatename = "cisco_nxos_show_mac.template"
+		# Create template file path
+		templatefile = os.path.join(templatepath,templatename)
+		# Open and store in memory
+		with open(templatefile, 'r') as fsmtemplatenamefile:
+			fsmmactemplate = textfsm.TextFSM(fsmtemplatenamefile)
 		# Show Version
 		if "cisco_ios" in sshdevicetype.lower():
-			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_version.template"
+			templatename = "cisco_ios_show_version.template"
 		if "cisco_xe" in sshdevicetype.lower():
-			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_version.template"
+			templatename = "cisco_ios_show_version.template"
 		if "cisco_nxos" in sshdevicetype.lower():
-			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_version.template"
-		fsmtemplatename = sshdevicetype.lower() + '_fsmversion.fsm'
-		if not os.path.isfile(fsmtemplatename):
-			downloadfile(fsmshowurl, fsmtemplatename)
-		fsmtemplatenamefile = open(fsmtemplatename)
-		fsmvertemplate = textfsm.TextFSM(fsmtemplatenamefile)
-		tempfilelist.append(fsmtemplatename)
-		fsmtemplatenamefile.close()
+			templatename = "cisco_nxos_show_version.template"
+		# Create template file path
+		templatefile = os.path.join(templatepath,templatename)
+		# Open and store in memory
+		with open(templatefile, 'r') as fsmtemplatenamefile:
+			fsmvertemplate = textfsm.TextFSM(fsmtemplatenamefile)
 		# Show Interface Status
 		if "cisco_ios" in sshdevicetype.lower():
-			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_interface_stat.template"
+			templatename = "cisco_ios_show_interface_stat.template"
 		if "cisco_xe" in sshdevicetype.lower():
-			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_interface_stat.template"
+			templatename = "cisco_ios_show_interface_stat.template"
 		if "cisco_nxos" in sshdevicetype.lower():
-			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_interface_stat.template"
-		fsmtemplatename = sshdevicetype.lower() + '_fsminterfacestat.fsm'
-		if not os.path.isfile(fsmtemplatename):
-			downloadfile(fsmshowurl, fsmtemplatename)
-		fsmtemplatenamefile = open(fsmtemplatename)
-		fsmintstattemplate = textfsm.TextFSM(fsmtemplatenamefile)
-		tempfilelist.append(fsmtemplatename)
-		fsmtemplatenamefile.close()
+			templatename = "cisco_nxos_show_interface_stat.template"
+		# Create template file path
+		templatefile = os.path.join(templatepath,templatename)
+		# Open and store in memory
+		with open(templatefile, 'r') as fsmtemplatenamefile:
+			fsmintstattemplate = textfsm.TextFSM(fsmtemplatenamefile)
 		# Show Power Inline
 		if "cisco_ios" in sshdevicetype.lower():
-			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_powerinline.template"
+			templatename = "cisco_ios_show_powerinline.template"
 		if "cisco_xe" in sshdevicetype.lower():
-			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_powerinline.template"
+			templatename = "cisco_ios_show_powerinline.template"
 		if 'cisco_nxos' in sshdevicetype.lower():
-			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_enviroment_power.template"
-		fsmtemplatename = sshdevicetype.lower() + '_fsmpowerinline.fsm'
-		if not os.path.isfile(fsmtemplatename):
-			downloadfile(fsmshowurl, fsmtemplatename)
-		fsmtemplatenamefile = open(fsmtemplatename)
-		fsmpoeporttemplate = textfsm.TextFSM(fsmtemplatenamefile)
-		tempfilelist.append(fsmtemplatename)
-		fsmtemplatenamefile.close()
+			templatename = "cisco_nxos_show_enviroment_power.template"
+		# Create template file path
+		templatefile = os.path.join(templatepath,templatename)
+		# Open and store in memory
+		with open(templatefile, 'r') as fsmtemplatenamefile:
+			fsmpoeporttemplate = textfsm.TextFSM(fsmtemplatenamefile)
 		# Show IP Interface Brief
 		if "cisco_ios" in sshdevicetype.lower():
-			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_ipintbr.template"
+			templatename = "cisco_ios_show_ipintbr.template"
 		if "cisco_xe" in sshdevicetype.lower():
-			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_ipintbr.template"
+			templatename = "cisco_ios_show_ipintbr.template"
 		if "cisco_nxos" in sshdevicetype.lower():
-			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_ipintbr.template"
-		fsmtemplatename = sshdevicetype.lower() + '_fsmipintbr.fsm'
-		if not os.path.isfile(fsmtemplatename):
-			downloadfile(fsmshowurl, fsmtemplatename)
-		fsmtemplatenamefile = open(fsmtemplatename)
-		fsmipintbrtemplate = textfsm.TextFSM(fsmtemplatenamefile)
-		tempfilelist.append(fsmtemplatename)
-		fsmtemplatenamefile.close()
+			templatename = "cisco_nxos_show_ipintbr.template"
+		# Create template file path
+		templatefile = os.path.join(templatepath,templatename)
+		# Open and store in memory
+		with open(templatefile, 'r') as fsmtemplatenamefile:
+			fsmipintbrtemplate = textfsm.TextFSM(fsmtemplatenamefile)
 		# Show Interface Transceiver
 		if "cisco_nxos" in sshdevicetype.lower():
-			fsmshowurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_inttrans.template"
-			fsmtemplatename = sshdevicetype.lower() + '_fsminttrans.fsm'
-			if not os.path.isfile(fsmtemplatename):
-				downloadfile(fsmshowurl, fsmtemplatename)
-			fsmtemplatenamefile = open(fsmtemplatename)
-			fsminttranstemplate = textfsm.TextFSM(fsmtemplatenamefile)
-			tempfilelist.append(fsmtemplatename)
-			fsmtemplatenamefile.close()
+			templatename = "cisco_nxos_show_inttrans.template"
+			# Create template file path
+			templatefile = os.path.join(templatepath,templatename)
+			# Open and store in memory
+			with open(templatefile, 'r') as fsmtemplatenamefile:
+				fsminttranstemplate = textfsm.TextFSM(fsmtemplatenamefile)
 		#################################################################
 		##################### DOWNLOAD TEMPLATES END ####################
 		#################################################################
@@ -762,7 +748,7 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 		if not 'invalid' in sshresult:
 			writeoutput (sshcommand,sshresult,sshdevicehostname,outputfolder)
 		# End
-		print 'Completed device information gathering for ' + sshdeviceip
+		print 'Completed device information gathering for ' + sshdevicehostname
 		#################################################################
 		########################### MISC END ############################
 		#################################################################

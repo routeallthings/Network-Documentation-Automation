@@ -60,6 +60,19 @@ except ImportError:
 		print 'You selected an option other than yes. Please be aware that this script requires the use of FileInput. Please install manually and retry'
 		sys.exit()
 
+# Get root path and add macdb library and template library
+import inspect, os.path, sys
+filename = inspect.getframeinfo(inspect.currentframe()).filename
+reprootpath = os.path.dirname(os.path.abspath(filename))
+# MAC OUI Library
+reprpath,lastfolder = os.path.split(reprootpath)
+lastfolder = 'macdb'
+macdbpath = os.path.join(reprpath,lastfolder)
+# Template Library
+reprpath,lastfolder = os.path.split(reprootpath)
+lastfolder = 'templates'
+templatepath = os.path.join(reprpath,lastfolder)		
+
 
 # Report Style
 HeaderFont = Font(bold=True)
@@ -153,12 +166,9 @@ def arpmacreport(iparptablelist,ipmactablelist,mactablelist,exportlocation):
 	# Preload MAC DB
 	try:
 		maclookupfilename = 'oui.txt'
-		tempfilelist.append(maclookupfilename)
-		if not os.path.isfile(maclookupfilename):
-			downloadfile(maclookupdburl, maclookupfilename)
-		maclookupdbo = open(maclookupfilename)
-		maclookupdb = maclookupdbo.readlines()
-		maclookupdbo.close()
+		maclookupdbo = os.path.join(macdbpath,maclookupfilename)
+		with open(maclookupdbo, 'r') as maclookupdbop:
+			maclookupdb = maclookupdbop.readlines()
 		skipmac = 0
 	except Exception as e:
 		skipmac = 1

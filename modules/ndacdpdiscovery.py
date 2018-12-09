@@ -22,9 +22,22 @@ from ndacommands import *
 from downloadfile import *
 from addressinnetwork import *
 
+# Get root path and add macdb library and template library
+import inspect, os.path, sys
+filename = inspect.getframeinfo(inspect.currentframe()).filename
+cdprootpath = os.path.dirname(os.path.abspath(filename))
+# MAC OUI Library
+cdprpath,lastfolder = os.path.split(cdprootpath)
+lastfolder = 'macdb'
+macdbpath = os.path.join(cdprpath,lastfolder)
+# Template Library
+cdprpath,lastfolder = os.path.split(cdprootpath)
+lastfolder = 'templates'
+templatepath = os.path.join(cdprpath,lastfolder)
+
 def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,includedsubnets,excludedsubnets):
 	cdpdevicecomplete = []
-	cdpdevicediscovery = []
+	cdpdevicetemp = []
 	cdpduplicateip = []
 	cdpduplicatehostname = []
 	tempfilelist = []
@@ -34,18 +47,16 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 	cdpduplicateip.append(cdpseedv)
 	# FSM Templates
 	if "cisco_ios" in cdpdevicetypev.lower():
-		fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_cdp_nei_detail.template"
+		templatename = "cisco_ios_show_cdp_nei_detail.template"
 	if "cisco_xe" in cdpdevicetypev.lower():
-		fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_cdp_nei_detail.template"
+		templatename = "cisco_ios_show_cdp_nei_detail.template"
 	if "cisco_nxos" in cdpdevicetypev.lower():
-		fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_cdp_nei_detail.template"
-	fsmtemplatename = cdpdevicetypev.lower() + '_fsmshowcdp.fsm'
-	if not os.path.isfile(fsmtemplatename):
-		downloadfile(fsmshowcdpurl, fsmtemplatename)
-	fsmtemplatenamefile = open(fsmtemplatename)
-	fsmcdptemplate = textfsm.TextFSM(fsmtemplatenamefile)
-	tempfilelist.append(fsmtemplatenamefile)
-	fsmtemplatenamefile.close()
+		templatename = "cisco_nxos_show_cdp_nei_detail.template"
+	# Create template file path
+	templatefile = os.path.join(templatepath,templatename)
+	# Open and store in memory
+	with open(templatefile, 'r') as fsmtemplatenamefile:
+		fsmcdptemplate = textfsm.TextFSM(fsmtemplatenamefile)
 	#
 	sshdevicetype = cdpdevicetypev
 	sshdeviceip = cdpseedv
@@ -73,9 +84,11 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 				except:
 					continue
 	try:
-		if not sshnet_connect:
-			time.sleep(3)
-			sys.exit()
+		sshnet_connect
+	except NameError:
+		print 'Could not successfully connect to the CDP seed device at ' + cdpseedv +'.'
+		time.sleep(5)
+		sys.exit()
 	except Exception as e:
 		print 'Error while gathering data on ' + cdpseedv + '. Error is ' + str(e)
 		time.sleep(5)
@@ -87,7 +100,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 		sshdevicehostname = sshdevicehostname.strip('>')
 		sshdevicehostname = sshnet_connect.find_prompt()
 		sshdevicehostname = sshdevicehostname.strip('#')
-	print 'CDP discovery starting on seed device ' + sshdevicehostname
+	print 'CDP discovery starting on seed device ' + sshdevicehostname + ' (' + cdpseedv + ')'
 	# Duplicate Hostname Detection
 	cdpduplicatehostname.append(sshdevicehostname)
 	# Continue
@@ -95,7 +108,6 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 	sshresult = sshnet_connect.send_command(sshcommand)
 	hcshowcdp = fsmcdptemplate.ParseText(sshresult)
 	print 'Attempting discovery on the seed router'
-	cdpdevicediscovery.append(cdpseedv.decode('utf-8'))
 	# Adding Seed Router to reports
 	seedroutertype = re.search('(\S+)_(\S+)',sshdevicetype)
 	cdpdevicedict = {}
@@ -139,7 +151,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 					if re.match('.*nx-os|nexus.*',cdpneiosfull.lower()):
 						cdpneios = 'nxos'
 						cdpnexthop = 1
-					for cdpdevice in cdpdevicecomplete:
+					for cdpdevice in cdpdevicetemp:
 						cdpdeviceip = cdpdevice.get('Device IPs').encode('utf-8')
 						if cdpdeviceip == cdpneiip:
 							cdpalreadyexists = 1
@@ -147,25 +159,25 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 						cdpdevicedict['Device IPs'] = cdpneiip.decode('utf-8')
 						cdpdevicedict['Vendor'] = cdpneivend.decode('utf-8')
 						cdpdevicedict['Type'] = cdpneios.decode('utf-8')
-						cdpdevicecomplete.append(cdpdevicedict)
+						cdpdevicetemp.append(cdpdevicedict)
 		except IndexError:
 			print 'Could not connect to device ' + cdpneiip
 			try:
 				sshnet_connect.disconnect()
 			except:
-				'''Nothing'''
+				pass
 		except Exception as e:
-			print 'Error while gathering data on ' + cdpneiip + '. Error is ' + str(e)
+			print 'Error with collecting CDP data on ' + cdpneiip + '. Error is ' + str(e)
 			try:
 				sshnet_connect.disconnect()
 			except:
-				'''Nothing'''
+				pass
 		except KeyboardInterrupt:
 			print 'CTRL-C pressed, exiting script'
 			try:
 				sshnet_connect.disconnect()
 			except:
-				'''Nothing'''
+				pass
 		
 	# Attempt Subsequent Discovery Levels (Non-Threaded)
 	def cdpdiscoverysub(usernamelist,sshdeviceip,cdptype,cdpvendor,cdpdiscoverydepthv,includedsubnets,excludedsubnets):
@@ -193,19 +205,17 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 			# FSM Templates
 			if subnetcheck == 1:
 				cdpdevicetype = cdpvendor.lower() + '_' + cdptype.lower()
-				if "cisco_ios" in cdpdevicetype.lower():
-					fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_cdp_nei_detail.template"
-				if "cisco_xe" in cdpdevicetype.lower():
-					fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_ios_show_cdp_nei_detail.template"
-				if "cisco_nxos" in cdpdevicetype.lower():
-					fsmshowcdpurl = "https://raw.githubusercontent.com/routeallthings/Network-Documentation-Automation/master/templates/cisco_nxos_show_cdp_nei_detail.template"
-				fsmtemplatename = cdpdevicetype.lower() + '_fsmshowcdp.fsm'
-				if not os.path.isfile(fsmtemplatename):
-					downloadfile(fsmshowcdpurl, fsmtemplatename)
-				fsmtemplatenamefile = open(fsmtemplatename)
-				fsmcdptemplate = textfsm.TextFSM(fsmtemplatenamefile)
-				tempfilelist.append(fsmtemplatenamefile)
-				fsmtemplatenamefile.close()
+				if "cisco_ios" in cdpdevicetypev.lower():
+					templatename = "cisco_ios_show_cdp_nei_detail.template"
+				if "cisco_xe" in cdpdevicetypev.lower():
+					templatename = "cisco_ios_show_cdp_nei_detail.template"
+				if "cisco_nxos" in cdpdevicetypev.lower():
+					templatename = "cisco_nxos_show_cdp_nei_detail.template"
+				# Create template file path
+				templatefile = os.path.join(templatepath,templatename)
+				# Open and store in memory
+				with open(templatefile, 'r') as fsmtemplatenamefile:
+					fsmcdptemplate = textfsm.TextFSM(fsmtemplatenamefile)
 				# CDP Check
 				try:
 					for username in usernamelist:
@@ -234,13 +244,10 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 					pass
 				skipcheck = 0
 				try:
-					if sshnet_connect:
-						skipcheck = 0
-					else:
-						skipcheck = 1
+					sshnet_connect
+					skipcheck = 0
 				except:
 					print 'Error with connecting to ' + sshdeviceip
-					#print 'Error with connecting to ' + sshdeviceip + '. Skipping Check'	
 					skipcheck = 1
 				if skipcheck == 0:
 					sshdevicehostname = sshnet_connect.find_prompt()
@@ -253,11 +260,17 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 					# Duplicate Hostname Detection
 					for hostname in cdpduplicatehostname:
 						if hostname == sshdevicehostname:
-							sshnet_connet.disconnet()
+							sshnet_connect.disconnect()
 							return
 					cdpduplicatehostname.append(sshdevicehostname)
-					print 'CDP discovery starting on secondary device ' + sshdevicehostname
-					#Show Interfaces
+					print 'CDP discovery starting on secondary device ' + sshdevicehostname + ' (' + sshdeviceip + ')'
+					# Adding to master list
+					cdpdevicedict = {}
+					cdpdevicedict['Device IPs'] = sshdeviceip
+					cdpdevicedict['Vendor'] = cdpvendor
+					cdpdevicedict['Type'] = cdptype
+					cdpdevicecomplete.append(cdpdevicedict)
+					# Show Interfaces
 					sshcommand = showcdp
 					sshresult = sshnet_connect.send_command(sshcommand)
 					hcshowcdp = fsmcdptemplate.ParseText(sshresult)
@@ -280,7 +293,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 							if re.match('.*nx-os|nexus.*',cdpneiosfull.lower()):
 								cdpneios = 'nxos'
 								cdpnexthop = 1
-							for cdpdevice in cdpdevicecomplete:
+							for cdpdevice in cdpdevicetemp:
 								cdpdeviceip = cdpdevice.get('Device IPs').encode('utf-8')
 								if cdpdeviceip == cdpneiip:
 									cdpalreadyexists = 1
@@ -288,45 +301,44 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 								cdpdevicedict['Device IPs'] = cdpneiip.decode('utf-8')
 								cdpdevicedict['Vendor'] = cdpneivend.decode('utf-8')
 								cdpdevicedict['Type'] = cdpneios.decode('utf-8')
-								cdpdevicecomplete.append(cdpdevicedict)
+								cdpdevicetemp.append(cdpdevicedict)
 								print 'Found new device, adding to list'
-					cdpdevicediscovery.append(cdpip.decode('utf-8'))
 		except IndexError:
 			print 'Could not connect to device ' + sshdeviceip
 			try:
 				sshnet_connect.disconnect()
 			except:
-				'''Nothing'''
+				pass
 		except Exception as e:
-			print 'Error while CDP data with ' + cdpip + '. Error is ' + str(e)
+			print 'Error with collecting CDP data on ' + cdpip + '. Error is ' + str(e)
 			cdpdevicediscovery.append(cdpip.decode('utf-8'))
 			try:
 				sshnet_connect.disconnect()
 			except:
-				'''Nothing'''
+				pass
 		except KeyboardInterrupt:
 			print 'CTRL-C pressed, exiting script'
 			try:
 				sshnet_connect.disconnect()
 			except:
-				'''Nothing'''
+				pass
 	# Start CDP Discovery
 	cdpdiscoverydepthv = 30
 	cdpmaxloop = cdpdiscoverydepthv * 3
 	cdpmaxloopiteration = 0
-	if not cdpdevicecomplete == []:
+	if not cdpdevicetemp == []:
 		while cdpmaxloopiteration < cdpmaxloop:
-			for cdpdevice in cdpdevicecomplete:
-				cdpalreadyexists=0
+			for cdpdevice in cdpdevicetemp:
+				cdpdupdetect=0
 				cdpip = cdpdevice.get('Device IPs').encode('utf-8')
-				for cdpalreadyattempted in cdpdevicediscovery:
-					if cdpip == cdpalreadyattempted:
-						cdpalreadyexists = 1
+				for cdpdup in cdpduplicateip:
+					if cdpip == cdpdup:
+						cdpdupdetect = 1
 				cdpvendor = cdpdevice.get('Vendor').encode('utf-8')
 				cdptype = cdpdevice.get('Type').encode('utf-8')
-				if not cdpalreadyexists == 1:
+				if not cdpdupdetect == 1:
 					cdpdiscoverysub(usernamelist,cdpip,cdptype,cdpvendor,cdpdiscoverydepthv,includedsubnets,excludedsubnets)
-					cdpmaxloopiteration = cdpmaxloopiteration + 1
+				cdpmaxloopiteration = cdpmaxloopiteration + 1
 	try:
 		for file in tempfilelist:
 			try:
@@ -335,4 +347,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 				pass
 	except:
 		pass
+	print '###################################################'
+	print 'Completed CDP Discovery, starting additional tasks'
+	print '###################################################'
 	return cdpdevicecomplete 
