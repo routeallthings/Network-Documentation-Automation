@@ -8,6 +8,7 @@
 
 # Import Native
 import os
+import re
 from decimal import *
 
 # Import NDA
@@ -129,6 +130,30 @@ def fullinventoryreport(fullinventorylist,exportlocation):
 		cell.style = 'BoldHeader'
 	for cell in ws2["1:1"]:
 		cell.style = 'BoldHeader'
+	# Set Column Width
+	for col in ws1.columns:
+		max_length = 0
+		column = col[0].column # Get the column name
+		for cell in col:
+			try: # Necessary to avoid error on empty cells
+				if len(str(cell.value)) > max_length:
+					max_length = len(cell.value)
+			except:
+				pass
+		adjusted_width = (max_length + 2) * 1.2
+		ws1.column_dimensions[column].width = adjusted_width
+	for col in ws2.columns:
+		max_length = 0
+		column = col[0].column # Get the column name
+		for cell in col:
+			try: # Necessary to avoid error on empty cells
+				if len(str(cell.value)) > max_length:
+					max_length = len(cell.value)
+			except:
+				pass
+		adjusted_width = (max_length + 2) * 1.2
+		ws2.column_dimensions[column].width = adjusted_width
+	# Save File
 	wb.save(filename = dest_path)
 	# Sorting
 	try:
@@ -136,14 +161,14 @@ def fullinventoryreport(fullinventorylist,exportlocation):
 		excel = win32com.client.Dispatch("Excel.Application")
 		wb = excel.Workbooks.Open(dest_path)
 		ws = wb.Worksheets('Device Inventory')
-		ws.Range('A2:C50000').Sort(Key1=ws.Range('A1'), Order1=1, Orientation=1)
-		ws.Range('A1:C1').AutoFilter(1)
+		ws.Range('A2:G50000').Sort(Key1=ws.Range('A1'), Order1=1, Orientation=1)
+		ws.Range('A1:G1').AutoFilter(1)
 		wb.Save()
 		# Tab 2
 		wb = excel.Workbooks.Open(dest_path)
 		ws = wb.Worksheets('Module Inventory')
-		ws.Range('A2:C50000').Sort(Key1=ws.Range('A1'), Order1=1, Orientation=1)
-		ws.Range('A1:C1').AutoFilter(1)
+		ws.Range('A2:D50000').Sort(Key1=ws.Range('A1'), Order1=1, Orientation=1)
+		ws.Range('A1:D1').AutoFilter(1)
 		wb.Save()
 		excel.Application.Quit()
 	except:
@@ -165,10 +190,19 @@ def arpmacreport(iparptablelist,ipmactablelist,mactablelist,exportlocation):
 	skiparpreport = 0
 	# Preload MAC DB
 	try:
+		maclookupdb = []
 		maclookupfilename = 'oui.txt'
 		maclookupdbo = os.path.join(macdbpath,maclookupfilename)
 		with open(maclookupdbo, 'r') as maclookupdbop:
-			maclookupdb = maclookupdbop.readlines()
+			maclookupdb_unfiltered = maclookupdbop.readlines()
+		for line in maclookupdb_unfiltered:
+			if 'hex' in line:
+				maclookupdb_dict = {}
+				maclookupreg = re.search('(\S+)\s+\S+\s+(.*)',line)
+				macwithouthiphens = maclookupreg.group(1).replace('-','')
+				maclookupdb_dict['mac'] = macwithouthiphens
+				maclookupdb_dict['company'] = maclookupreg.group(2)
+				maclookupdb.append(maclookupdb_dict)
 		skipmac = 0
 	except Exception as e:
 		skipmac = 1
@@ -184,12 +218,12 @@ def arpmacreport(iparptablelist,ipmactablelist,mactablelist,exportlocation):
 		mac_company_mac = str(row.get('MAC')[0:7].replace('.','')).upper()
 		# Get a vendor mac address and add to the table
 		try:
-			for line in maclookupdb:
-				if line.startswith(mac_company_mac):
-					linev = line.replace('\n','').replace('\t',' ')
-					maccompany = re.search(r'^[A-Z0-9]{6}\s+\(base 16\)\s+(.*)',linev).group(1)
-				if maccompany == '' or maccompany == None:
-					maccompany = 'Unknown'
+			macsearch = filter(lambda x: x['mac'] == mac_company_mac, maclookupdb)
+			if macsearch == []:
+				maccompany = 'Unknown'
+			else:
+				for dict in macsearch:
+					maccompany = dict['company']
 		except:
 			maccompany = 'Unknown'
 		tempdict['MAC Manufacturer'] = maccompany
@@ -256,6 +290,29 @@ def arpmacreport(iparptablelist,ipmactablelist,mactablelist,exportlocation):
 		cell.style = 'BoldHeader'
 	for cell in ws2["1:1"]:
 		cell.style = 'BoldHeader'
+	# Set Column Width
+	for col in ws1.columns:
+		max_length = 0
+		column = col[0].column # Get the column name
+		for cell in col:
+			try: # Necessary to avoid error on empty cells
+				if len(str(cell.value)) > max_length:
+					max_length = len(cell.value)
+			except:
+				pass
+		adjusted_width = (max_length + 2) * 1.2
+		ws1.column_dimensions[column].width = adjusted_width
+	for col in ws2.columns:
+		max_length = 0
+		column = col[0].column # Get the column name
+		for cell in col:
+			try: # Necessary to avoid error on empty cells
+				if len(str(cell.value)) > max_length:
+					max_length = len(cell.value)
+			except:
+				pass
+		adjusted_width = (max_length + 2) * 1.2
+		ws2.column_dimensions[column].width = adjusted_width
 	# Save workbook
 	wb.save(filename = dest_path)
 	# Sorting
@@ -264,14 +321,14 @@ def arpmacreport(iparptablelist,ipmactablelist,mactablelist,exportlocation):
 		excel = win32com.client.Dispatch("Excel.Application")
 		wb = excel.Workbooks.Open(dest_path)
 		ws = wb.Worksheets('ARP Report')
-		ws.Range('A2:C50000').Sort(Key1=ws.Range('A1'), Order1=1, Orientation=1)
-		ws.Range('A1:C1').AutoFilter(1)
+		ws.Range('A2:F50000').Sort(Key1=ws.Range('A1'), Order1=1, Orientation=1)
+		ws.Range('A1:F1').AutoFilter(1)
 		wb.Save()
 		# Tab 2
 		wb = excel.Workbooks.Open(dest_path)
 		ws = wb.Worksheets('MAC Report')
-		ws.Range('A2:C50000').Sort(Key1=ws.Range('A1'), Order1=1, Orientation=1)
-		ws.Range('A1:C1').AutoFilter(1)
+		ws.Range('A2:E50000').Sort(Key1=ws.Range('A1'), Order1=1, Orientation=1)
+		ws.Range('A1:E1').AutoFilter(1)
 		wb.Save()
 		excel.Application.Quit()
 	except:
@@ -385,6 +442,41 @@ def interfacereport (l2interfacelist,l3interfacelist,poeinterfacelist,exportloca
 		cell.style = 'BoldHeader'
 	for cell in ws3["1:1"]:
 		cell.style = 'BoldHeader'
+	# Set Column Width
+	for col in ws1.columns:
+		max_length = 0
+		column = col[0].column # Get the column name
+		for cell in col:
+			try: # Necessary to avoid error on empty cells
+				if len(str(cell.value)) > max_length:
+					max_length = len(cell.value)
+			except:
+				pass
+		adjusted_width = (max_length + 2) * 1.2
+		ws1.column_dimensions[column].width = adjusted_width
+	for col in ws2.columns:
+		max_length = 0
+		column = col[0].column # Get the column name
+		for cell in col:
+			try: # Necessary to avoid error on empty cells
+				if len(str(cell.value)) > max_length:
+					max_length = len(cell.value)
+			except:
+				pass
+		adjusted_width = (max_length + 2) * 1.2
+		ws2.column_dimensions[column].width = adjusted_width
+	for col in ws3.columns:
+		max_length = 0
+		column = col[0].column # Get the column name
+		for cell in col:
+			try: # Necessary to avoid error on empty cells
+				if len(str(cell.value)) > max_length:
+					max_length = len(cell.value)
+			except:
+				pass
+		adjusted_width = (max_length + 2) * 1.2
+		ws3.column_dimensions[column].width = adjusted_width
+	# Save File
 	wb.save(filename = dest_path)
 	# Sorting
 	try:
@@ -392,14 +484,14 @@ def interfacereport (l2interfacelist,l3interfacelist,poeinterfacelist,exportloca
 		excel = win32com.client.Dispatch("Excel.Application")
 		wb = excel.Workbooks.Open(dest_path)
 		ws = wb.Worksheets('Interface Overview')
-		ws.Range('A2:C50000').Sort(Key1=ws.Range('A1'), Order1=1, Orientation=1)
-		ws.Range('A1:C1').AutoFilter(1)
+		ws.Range('A2:G50000').Sort(Key1=ws.Range('A1'), Order1=1, Orientation=1)
+		ws.Range('A1:G1').AutoFilter(1)
 		wb.Save()
 		# Tab 2
 		wb = excel.Workbooks.Open(dest_path)
 		ws = wb.Worksheets('L2 Interfaces')
-		ws.Range('A2:C50000').Sort(Key1=ws.Range('A1'), Order1=1, Orientation=1)
-		ws.Range('A1:C1').AutoFilter(1)
+		ws.Range('A2:H50000').Sort(Key1=ws.Range('A1'), Order1=1, Orientation=1)
+		ws.Range('A1:H1').AutoFilter(1)
 		wb.Save()
 		# Tab 3
 		wb = excel.Workbooks.Open(dest_path)
@@ -438,14 +530,27 @@ def poereport(poeinterfacelist,exportlocation):
 	# Set styles on header row
 	for cell in ws1["1:1"]:
 		cell.style = 'BoldHeader'
+	# Set Column Width
+	for col in ws1.columns:
+		max_length = 0
+		column = col[0].column # Get the column name
+		for cell in col:
+			try: # Necessary to avoid error on empty cells
+				if len(str(cell.value)) > max_length:
+					max_length = len(cell.value)
+			except:
+				pass
+		adjusted_width = (max_length + 2) * 1.2
+		ws1.column_dimensions[column].width = adjusted_width
+	# Save File
 	wb.save(filename = dest_path)
 	# Sorting
 	try:
 		excel = win32com.client.Dispatch("Excel.Application")
 		wb = excel.Workbooks.Open(dest_path)
 		ws = wb.Worksheets('POE Interfaces')
-		ws.Range('A2:C50000').Sort(Key1=ws.Range('A1'), Order1=1, Orientation=1)
-		ws.Range('A1:C1').AutoFilter(1)
+		ws.Range('A2:H50000').Sort(Key1=ws.Range('A1'), Order1=1, Orientation=1)
+		ws.Range('A1:H1').AutoFilter(1)
 		wb.Save()
 		excel.Application.Quit()
 	except:
@@ -471,6 +576,19 @@ def healthcheckreport(healthchecklist,exportlocation):
 	# Set styles on header row
 	for cell in ws1["1:1"]:
 		cell.style = 'BoldHeader'
+	# Set Column Width
+	for col in ws1.columns:
+		max_length = 0
+		column = col[0].column # Get the column name
+		for cell in col:
+			try: # Necessary to avoid error on empty cells
+				if len(str(cell.value)) > max_length:
+					max_length = len(cell.value)
+			except:
+				pass
+		adjusted_width = (max_length + 2) * 1.2
+		ws1.column_dimensions[column].width = adjusted_width
+	# Save File
 	wb.save(filename = dest_path)
 	# Sorting
 	try:
