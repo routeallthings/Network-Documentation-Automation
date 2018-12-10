@@ -460,7 +460,9 @@ if __name__ == "__main__":
 		mnetcatfile.close()
 	# SSH Section
 	if devicediscoverysshv == 1:
-		print 'Starting SSH CDP Discovery'
+		print '###################################################'
+		print 'Starting SSH CDP Discovery, please be patient.'
+		print '###################################################'
 		cdpdevicecomplete = cdpdiscovery(usernamelist,devicediscoveryseedv,devicediscoverysshtypev,devicediscoverydepthv,includedsubnets,excludedsubnets)
 		if cdpdevicecomplete:
 			for cdpdevice in cdpdevicecomplete:
@@ -498,6 +500,10 @@ if __name__ == "__main__":
 			runningthreads = False
 		time.sleep(1)
 		second = second + 1
+# Print CLI Output for Report Section
+print '###################################################'
+print 'Completed information gathering, starting reports'
+print '###################################################'
 # Map Output
 try:
 	if devicediscoverymapv == 1 and devicediscoveryv == 1:
@@ -545,5 +551,8 @@ for file in tempfilelist:
 	except:
 		pass
 # Final statement
-print 'Completed all tasks'
+# Print CLI Output for Report Section
+print '###################################################'
+print 'Completed Network Discovery Automation Tool'
+print '###################################################'
 print 'Thanks for playing..'

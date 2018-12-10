@@ -40,7 +40,6 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 	cdpdevicetemp = []
 	cdpduplicateip = []
 	cdpduplicatehostname = []
-	tempfilelist = []
 	# Create Commands
 	showcdp = "show cdp neighbor detail"
 	# Duplicate IP Detection (Add Core)
@@ -111,6 +110,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 	# Adding Seed Router to reports
 	seedroutertype = re.search('(\S+)_(\S+)',sshdevicetype)
 	cdpdevicedict = {}
+	cdpdevicedict['Depth'] = 1
 	cdpdevicedict['Device IPs'] = sshdeviceip
 	cdpdevicedict['Vendor'] = seedroutertype.group(1)
 	cdpdevicedict['Type'] = seedroutertype.group(2)
@@ -156,6 +156,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 						if cdpdeviceip == cdpneiip:
 							cdpalreadyexists = 1
 					if cdpalreadyexists == 0 and cdpnexthop == 1:
+						cdpdevicedict['Depth'] = 2
 						cdpdevicedict['Device IPs'] = cdpneiip.decode('utf-8')
 						cdpdevicedict['Vendor'] = cdpneivend.decode('utf-8')
 						cdpdevicedict['Type'] = cdpneios.decode('utf-8')
@@ -178,9 +179,10 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 				sshnet_connect.disconnect()
 			except:
 				pass
+	print 'Completed discovery on the seed device'
 		
 	# Attempt Subsequent Discovery Levels (Non-Threaded)
-	def cdpdiscoverysub(usernamelist,sshdeviceip,cdptype,cdpvendor,cdpdiscoverydepthv,includedsubnets,excludedsubnets):
+	def cdpdiscoverysub(usernamelist,sshdeviceip,cdptype,cdpvendor,includedsubnets,excludedsubnets):
 		try:
 			# Duplicate IP Detection
 			for dupip in cdpduplicateip:
@@ -323,30 +325,33 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 			except:
 				pass
 	# Start CDP Discovery
-	cdpdiscoverydepthv = 30
-	cdpmaxloop = cdpdiscoverydepthv * 3
+	cdpdiscoverydepthv = int(cdpdiscoverydepthv)
+	cdpdiscoverydepth = 3
+	cdpmaxloop = 1000
 	cdpmaxloopiteration = 0
 	if not cdpdevicetemp == []:
 		while cdpmaxloopiteration < cdpmaxloop:
 			for cdpdevice in cdpdevicetemp:
-				cdpdupdetect=0
+				# Duplicate Detection
 				cdpip = cdpdevice.get('Device IPs').encode('utf-8')
 				for cdpdup in cdpduplicateip:
 					if cdpip == cdpdup:
-						cdpdupdetect = 1
+						continue
+				# Depth Detection
+				if cdpdiscoverydepth > cdpdiscoverydepthv:
+					cdpmaxloopiteration = cdpmaxloopiteration + 1000
+					break
+				# Continue with detection
 				cdpvendor = cdpdevice.get('Vendor').encode('utf-8')
 				cdptype = cdpdevice.get('Type').encode('utf-8')
-				if not cdpdupdetect == 1:
-					cdpdiscoverysub(usernamelist,cdpip,cdptype,cdpvendor,cdpdiscoverydepthv,includedsubnets,excludedsubnets)
+				cdpdiscoverysub(usernamelist,cdpip,cdptype,cdpvendor,includedsubnets,excludedsubnets)
+				# Add loop counts
 				cdpmaxloopiteration = cdpmaxloopiteration + 1
-	try:
-		for file in tempfilelist:
-			try:
-				os.remove(file)
-			except:
-				pass
-	except:
-		pass
+			if cdpdiscoverydepth <= cdpdiscoverydepthv:
+				print 'Completed discovery at the depth of ' + str(cdpdiscoverydepth)
+			if cdpdiscoverydepth > cdpdiscoverydepthv:
+				print 'Maximum defined depth reached'
+			cdpdiscoverydepth = cdpdiscoverydepth + 1
 	print '###################################################'
 	print 'Completed CDP Discovery, starting additional tasks'
 	print '###################################################'
