@@ -35,11 +35,14 @@ cdprpath,lastfolder = os.path.split(cdprootpath)
 lastfolder = 'templates'
 templatepath = os.path.join(cdprpath,lastfolder)
 
-def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,includedsubnets,excludedsubnets):
+def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,includedsubnets,excludedsubnets,excludeddomains):
 	cdpdevicecomplete = []
 	cdpdevicetemp = []
 	cdpduplicateip = []
 	cdpduplicatehostname = []
+	networkgraphlist = []
+	networkgraphlist_neighbors = []
+	showdomain = 'sh run | i domain-name'
 	# Create Commands
 	showcdp = "show cdp neighbor detail"
 	# Duplicate IP Detection (Add Core)
@@ -115,6 +118,26 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 	cdpdevicedict['Vendor'] = seedroutertype.group(1)
 	cdpdevicedict['Type'] = seedroutertype.group(2)
 	cdpdevicecomplete.append(cdpdevicedict)
+	# Adding Seed Router to Network Graph
+	networkgraphdict = {}
+	cdpneistrip = ''
+	sshdomain = sshnet_connect.send_command(showdomain)
+	if sshdomain != '':
+		sshdomainadd = re.search('\S+\s+\S+\s+(\S+).*',sshdomain).group(1)
+		cdpneiname = sshdevicehostname + sshdomainadd
+	else:
+		cdpneiname = sshdevicehostname
+	for string in excludeddomains:
+		if string == '':
+			cdpneistrip = cdpneiname
+			break
+		if string in cdpneiname and not string == '':
+			cdpneistrip = cdpneiname.replace(string,'').rstrip('.')
+			break
+	if cdpneistrip == '':
+		cdpneistrip = cdpneiname
+	networkgraphdict['hostname'] = cdpneistrip
+	networkgraphdict['ip'] = sshdeviceip
 	# Starting loop
 	for cdpnei in hcshowcdp:
 		try:	
@@ -127,6 +150,16 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 			cdpneiosfull = cdpnei[5]
 			subnetcheck = 0
 			subnetcheck2 = 0
+			cdpneistrip = ''
+			for string in excludeddomains:
+				if string == '':
+					cdpneistrip = cdpneiname
+					break
+				if string in cdpneiname and not string == '':
+					cdpneistrip = cdpneiname.replace(string,'').rstrip('.')
+					break
+			if cdpneistrip == '':
+				cdpneistrip = cdpneiname
 			if cdpneiip == None or cdpneiip == '':
 				subnetcheck2 = 0
 			else:
@@ -156,11 +189,18 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 						if cdpdeviceip == cdpneiip:
 							cdpalreadyexists = 1
 					if cdpalreadyexists == 0 and cdpnexthop == 1:
+						# Append CDP data
 						cdpdevicedict['Depth'] = 2
 						cdpdevicedict['Device IPs'] = cdpneiip.decode('utf-8')
 						cdpdevicedict['Vendor'] = cdpneivend.decode('utf-8')
 						cdpdevicedict['Type'] = cdpneios.decode('utf-8')
 						cdpdevicetemp.append(cdpdevicedict)
+						# Append Network Graph data
+						networkgraphdict_neighbors = {}
+						networkgraphdict_neighbors['neighbor'] = cdpneistrip
+						networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
+						networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
+						networkgraphlist_neighbors.append(networkgraphdict_neighbors)
 		except IndexError:
 			print 'Could not connect to device ' + cdpneiip
 			try:
@@ -179,10 +219,14 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 				sshnet_connect.disconnect()
 			except:
 				pass
+	# Combine dictionary to Network Graph List
+	networkgraphdict['neighbors'] = networkgraphlist_neighbors
+	networkgraphlist.append(networkgraphdict)
+	# Print end of function
 	print 'Completed discovery on the seed device'
 		
 	# Attempt Subsequent Discovery Levels (Non-Threaded)
-	def cdpdiscoverysub(usernamelist,sshdeviceip,cdptype,cdpvendor,includedsubnets,excludedsubnets):
+	def cdpdiscoverysub(usernamelist,sshdeviceip,cdptype,cdpvendor,includedsubnets,excludedsubnets,excludeddomains):
 		try:
 			# Duplicate IP Detection
 			for dupip in cdpduplicateip:
@@ -272,6 +316,27 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 					cdpdevicedict['Vendor'] = cdpvendor
 					cdpdevicedict['Type'] = cdptype
 					cdpdevicecomplete.append(cdpdevicedict)
+					# Creation of Network Graph information
+					networkgraphlist_neighbors = []
+					networkgraphdict = {}
+					cdpneistrip = ''
+					sshdomain = sshnet_connect.send_command(showdomain)
+					if sshdomain != '':
+						sshdomainadd = re.search('\S+\s+\S+\s+(\S+).*',sshdomain).group(1)
+						cdpneiname = sshdevicehostname + sshdomainadd
+					else:
+						cdpneiname = sshdevicehostname
+					for string in excludeddomains:
+						if string == '':
+							cdpneistrip = cdpneiname
+							break
+						if string in cdpneiname and not string == '':
+							cdpneistrip = cdpneiname.replace(string,'').rstrip('.')
+							break
+					if cdpneistrip == '':
+						cdpneistrip = cdpneiname
+					networkgraphdict['hostname'] = cdpneistrip
+					networkgraphdict['ip'] = sshdeviceip
 					# Show Interfaces
 					sshcommand = showcdp
 					sshresult = sshnet_connect.send_command(sshcommand)
@@ -284,6 +349,16 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 						cdpneiip = cdpnei[1]
 						cdpneidevice = cdpnei[2]
 						cdpneiosfull = cdpnei[5]
+						cdpneistrip = ''
+						for string in excludeddomains:
+							if string == '':
+								cdpneistrip = cdpneiname
+								break
+							if string in cdpneiname and not string == '':
+								cdpneistrip = cdpneiname.replace(string,'').rstrip('.')
+								break
+						if cdpneistrip == '':
+							cdpneistrip = cdpneiname
 						if 'cisco' in cdpneidevice.lower():
 							cdpneivend = 'cisco'
 							if re.match('.*\iosxe|xe.*',cdpneiosfull.lower()):
@@ -300,11 +375,21 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 								if cdpdeviceip == cdpneiip:
 									cdpalreadyexists = 1
 							if cdpalreadyexists == 0 and cdpnexthop == 1:
+								# Append CDP data
 								cdpdevicedict['Device IPs'] = cdpneiip.decode('utf-8')
 								cdpdevicedict['Vendor'] = cdpneivend.decode('utf-8')
 								cdpdevicedict['Type'] = cdpneios.decode('utf-8')
 								cdpdevicetemp.append(cdpdevicedict)
 								print 'Found new device, adding to list'
+								# Append Network Graph data
+								networkgraphdict_neighbors = {}
+								networkgraphdict_neighbors['neighbor'] = cdpneistrip
+								networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
+								networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
+								networkgraphlist_neighbors.append(networkgraphdict_neighbors)
+					# Add Network Graph Dict to master list
+					networkgraphdict['neighbors'] = networkgraphlist_neighbors
+					networkgraphlist.append(networkgraphdict)
 		except IndexError:
 			print 'Could not connect to device ' + sshdeviceip
 			try:
@@ -344,7 +429,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 				# Continue with detection
 				cdpvendor = cdpdevice.get('Vendor').encode('utf-8')
 				cdptype = cdpdevice.get('Type').encode('utf-8')
-				cdpdiscoverysub(usernamelist,cdpip,cdptype,cdpvendor,includedsubnets,excludedsubnets)
+				cdpdiscoverysub(usernamelist,cdpip,cdptype,cdpvendor,includedsubnets,excludedsubnets,excludeddomains)
 				# Add loop counts
 				cdpmaxloopiteration = cdpmaxloopiteration + 1
 			if cdpdiscoverydepth <= cdpdiscoverydepthv:
@@ -355,4 +440,4 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 	print '###################################################'
 	print 'Completed CDP Discovery, starting additional tasks'
 	print '###################################################'
-	return cdpdevicecomplete 
+	return cdpdevicecomplete,networkgraphlist

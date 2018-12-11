@@ -43,6 +43,7 @@ from ndagatherdata import *
 from ndahealthcheck import *
 from ndacdpdiscovery import *
 from ndareports import *
+from ndagraph import *
 
 # Start of Toolkit Functions
 from addressinnetwork import *
@@ -220,7 +221,7 @@ if devicediscoverymapv == 1:
 		print 'Could not find graphviz. Please make sure the PATH variable is set in windows to the correct location, and that the product is installed'
 mnetvar = {}
 mnetsnmp = []
-mnetdomains = []
+excludeddomains = []
 excludedsubnets = []
 includedsubnets = []
 mnetgraph = {}
@@ -246,9 +247,9 @@ if devicediscoverydomains == None:
 if ',' in devicediscoverydomains:
 	devicediscoverydomains = devicediscoverydomains.split(',')
 	for device in devicediscoverydomains:
-		mnetdomains.append(device)
+		excludeddomains.append(device)
 else:
-	mnetdomains.append(devicediscoverydomains)
+	excludeddomains.append(devicediscoverydomains)
 # MNET Exclude
 devicediscoveryexcludedsubnets = configdict.get('DeviceDiscoveryExcludedSubnets')
 if devicediscoveryexcludedsubnets == None:
@@ -283,7 +284,7 @@ mnetgraph['expand_vss'] = 0
 mnetgraph['expand_lag'] = 0
 # MNET Full
 mnetvar['snmp'] = mnetsnmp
-mnetvar['domains'] = mnetdomains
+mnetvar['domains'] = excludeddomains
 mnetvar['exclude'] = excludedsubnets
 mnetvar['subnets'] = includedsubnets
 mnetvar['graph'] = mnetgraph
@@ -463,7 +464,7 @@ if __name__ == "__main__":
 		print '###################################################'
 		print 'Starting SSH CDP Discovery, please be patient.'
 		print '###################################################'
-		cdpdevicecomplete = cdpdiscovery(usernamelist,devicediscoveryseedv,devicediscoverysshtypev,devicediscoverydepthv,includedsubnets,excludedsubnets)
+		cdpdevicecomplete,networkgraphlist = cdpdiscovery(usernamelist,devicediscoveryseedv,devicediscoverysshtypev,devicediscoverydepthv,includedsubnets,excludedsubnets,excludeddomains)
 		if cdpdevicecomplete:
 			for cdpdevice in cdpdevicecomplete:
 				cdpduplicate = 0
@@ -504,18 +505,28 @@ if __name__ == "__main__":
 print '###################################################'
 print 'Completed information gathering, starting reports'
 print '###################################################'
-# Map Output
+# Map Output for SNMP
 try:
 	if devicediscoverymapv == 1 and devicediscoveryv == 1:
-		print 'Starting to export Map Topology'
+		print 'Starting to export SNMP Map Topology'
 		topologyfile = exportlocation + '\\Network_Topology.pdf'
 		topologyfiledot = exportlocation + '\\Network_Topology.dot'
 		topologyname = devicediscoverymaptitlev
 		graph.output_dot(topologyfile, topologyname)
 		graph.output_dot(topologyfiledot, topologyname)
+		print 'Successfully created the SNMP Map Topology'
 except Exception as e:
 	print 'Error with exporting network topology. Error is ' + str(e)
-
+# Map Output for SSH
+try:
+	if devicediscoverymapv == 1 and devicediscoverysshv == 1:
+		print 'Starting to export SSH Map Topology'
+		topologyfile = exportlocation + '\\Network_Topology.pdf'
+		topologyname = devicediscoverymaptitlev
+		networkgraph(topologyfile,topologyname, networkgraphlist, fullinventorylist, l2interfacelist, l3interfacelist)
+		print 'Successfully created the SSH Map Topology'
+except Exception as e:
+	print 'Error with exporting network topology. Error is ' + str(e)
 # Report Outputs
 if fullinventoryreportv == 1 and fullinventorylist != []:
 	print 'Exporting Full Inventory Report'

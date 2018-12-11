@@ -269,12 +269,12 @@ def arpmacreport(iparptablelist,ipmactablelist,mactablelist,exportlocation):
 		mac_company_mac = str(row.get('MAC')[0:7].replace('.','')).upper()
 		# Get a vendor mac address and add to the table
 		try:
-			for line in maclookupdb:
-				if line.startswith(mac_company_mac):
-					linev = line.replace('\n','').replace('\t',' ')
-					maccompany = re.search(r'^[A-Z0-9]{6}\s+\(base 16\)\s+(.*)',linev).group(1)
-				if maccompany == '' or maccompany == None:
-					maccompany = 'Unknown'
+			macsearch = filter(lambda x: x['mac'] == mac_company_mac, maclookupdb)
+			if macsearch == []:
+				maccompany = 'Unknown'
+			else:
+				for dict in macsearch:
+					maccompany = dict['company']
 		except:
 			maccompany = 'Unknown'
 		# Append to Workbook
