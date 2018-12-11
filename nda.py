@@ -113,6 +113,8 @@ if internettest == 1:
 				with zipfile.ZipFile(basezippath, 'r') as zip_ref:
 					for file in zip_ref.namelist():
 						if file.startswith('Network-Documentation-Automation-master/'):
+							if file.endswith('.xlsx'):
+								continue
 							filepath,filename = os.path.split(file)
 							finalfilepath = os.path.join(rootpath,filename)
 							# Extract folder to \Network-Documentation-Automation-master
