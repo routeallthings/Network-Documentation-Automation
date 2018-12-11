@@ -4,23 +4,18 @@ The purpose of this tool is to pull information from the network via CDP/LLDP di
 
 ## Getting Started
 
-You need to download and add configuraiton information into the included XLSX file. This data is what the script uses to run.
+You need to download and add configuration information into the included XLSX file. This data is what the script uses to run.
 
 Step 1. Install Python 2.7
-Step 2. Install Git
-Step 3. Install Graphviz
-Step 4. Add a PATH variable pointing to the BIN folder for Graphviz
-Step 5. Fill in the XLSX spreadsheet
-Step 6. Run the script and reference the files
+Step 2. Fill in the XLSX spreadsheet
+Step 3. Run the script and reference the files
 
 Report any issues to my email and I will get them fixed.
 
 ### Prerequisites
 
-GIT (This is required to download the XLHELPER module using a fork that I modified for compatibility with Python 2.7)
 XLHELPER
 OPENPYXL
-MNETSUITE (My local fork)
 REQUESTS
 
 ## Deployment
@@ -38,7 +33,7 @@ Configure the XLSX file (change only the values). After that just execute the sc
 
 ## Versioning
 
-VERSION 0.5
+VERSION 0.6.3
 
 
 ## Authors
