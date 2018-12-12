@@ -7,13 +7,26 @@
 # addressInNetwork.py
 
 # Native Modules
-import struct
-import socket
-from decimal import *
+import os
+
+# Non-Native Modules
+# netaddr
+try:
+	from netaddr import IPNetwork, IPAddress
+except ImportError:
+	netaddrinstallstatus = raw_input ('netaddr module is missing, would you like to automatically install? (Y/N): ')
+	if 'y' in netaddrinstallstatus.lower():
+		os.system('python -m pip install netaddr')
+		from netaddr import IPNetwork, IPAddress
+	else:
+		print 'You selected an option other than yes. Please be aware that this script requires the use of netaddr. Please install manually and retry'
+		print 'Exiting in 5 seconds'
+		time.sleep(5)
+		sys.exit()
 
 def addressinnetwork(ip,net):
-   "Is an address in a network"
-   ipaddr = struct.unpack('L',socket.inet_aton(ip))[0]
-   netaddr,bits = net.split('/')
-   netmask = struct.unpack('L',socket.inet_aton(netaddr))[0] & ((2L<<int(bits)-1) - 1)
-   return ipaddr & netmask == netmask
+	"Is an address in a network"
+	if IPAddress(ip) in IPNetwork(net):
+		return True
+	else:
+		return False

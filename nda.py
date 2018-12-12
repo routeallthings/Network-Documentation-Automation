@@ -569,3 +569,4 @@ print '###################################################'
 print 'Completed Network Discovery Automation Tool'
 print '###################################################'
 print 'Thanks for playing..'
+programPause = raw_input("Press any key to exit")

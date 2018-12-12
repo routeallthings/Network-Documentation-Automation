@@ -157,6 +157,9 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 					break
 				if string in cdpneiname and not string == '':
 					cdpneistrip = cdpneiname.replace(string,'').rstrip('.')
+					# Bug fix for nexus names where it pulls in the SN into the host name in the SSH output
+					if re.match('\S+\.\(\S+\)',cdpneistrip):
+						cdpneistrip = re.search('(\S+)\.\(\S+\)',cdpneistrip).group(1)
 					break
 			if cdpneistrip == '':
 				cdpneistrip = cdpneiname
@@ -170,16 +173,16 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 							subnetcheck = 1
 			if subnetcheck2 == 1:
 				for subnetwork in excludedsubnets:
-						if addressinnetwork(sshdeviceip,subnetwork) == True:
+						if addressinnetwork(cdpneiip,subnetwork) == True:
 							subnetcheck = 0
 			if subnetcheck == 1:
 				if 'cisco' in cdpneidevice.lower() or 'cisco' in cdpneiosfull.lower():
 					cdpneivend = 'cisco'
-					if re.match('.*\iosxe|xe.*',cdpneiosfull.lower()):
-						cdpneios = 'xe'
-						cdpnexthop = 1
-					if re.match('.*ios(?!xe).*',cdpneiosfull.lower()):
+					if re.match('.*ios.*',cdpneiosfull.lower()):
 						cdpneios = 'ios'
+						cdpnexthop = 1
+					if re.match('.*(\iosxe|xe|universal).*',cdpneiosfull.lower()):
+						cdpneios = 'xe'
 						cdpnexthop = 1
 					if re.match('.*nx-os|nexus.*',cdpneiosfull.lower()):
 						cdpneios = 'nxos'
@@ -332,6 +335,9 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 							break
 						if string in cdpneiname and not string == '':
 							cdpneistrip = cdpneiname.replace(string,'').rstrip('.')
+							# Bug fix for nexus names where it pulls in the SN into the host name in the SSH output
+							if re.match('\S+\.\(\S+\)',cdpneistrip):
+								cdpneistrip = re.search('(\S+)\.\(\S+\)',cdpneistrip).group(1)
 							break
 					if cdpneistrip == '':
 						cdpneistrip = cdpneiname
@@ -359,13 +365,13 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 								break
 						if cdpneistrip == '':
 							cdpneistrip = cdpneiname
-						if 'cisco' in cdpneidevice.lower():
+						if 'cisco' in cdpneidevice.lower() or 'cisco' in cdpneiosfull.lower():
 							cdpneivend = 'cisco'
-							if re.match('.*\iosxe|xe.*',cdpneiosfull.lower()):
-								cdpneios = 'xe'
-								cdpnexthop = 1
-							if re.match('.*ios(?!xe).*',cdpneiosfull.lower()):
+							if re.match('.*ios.*',cdpneiosfull.lower()):
 								cdpneios = 'ios'
+								cdpnexthop = 1
+							if re.match('.*(\iosxe|xe|universal).*',cdpneiosfull.lower()):
+								cdpneios = 'xe'
 								cdpnexthop = 1
 							if re.match('.*nx-os|nexus.*',cdpneiosfull.lower()):
 								cdpneios = 'nxos'
@@ -398,7 +404,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 				pass
 		except Exception as e:
 			print 'Error with collecting CDP data on ' + cdpip + '. Error is ' + str(e)
-			cdpdevicediscovery.append(cdpip.decode('utf-8'))
+			cdpduplicateip.append(cdpip.decode('utf-8'))
 			try:
 				sshnet_connect.disconnect()
 			except:
