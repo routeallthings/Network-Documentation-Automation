@@ -37,21 +37,21 @@ lastfolder = 'templates'
 templatepath = os.path.join(cdprpath,lastfolder)
 
 def sshcheck(device,port):
-  try:
-    # see if we can resolve the host name -- tells us if there is
-    # a DNS listening
-    host = socket.gethostbyname(device)
-    # connect to the host -- tells us if the host is actually
-    # reachable
-    s = socket.create_connection((host, port), .25)
 	try:
-		s.close()
+		# see if we can resolve the host name -- tells us if there is
+		# a DNS listening
+		host = socket.gethostbyname(device)
+		# connect to the host -- tells us if the host is actually
+		# reachable
+		s = socket.create_connection((host, port), .25)
+		try:
+			s.close()
+		except:
+			pass
+		return True
 	except:
 		pass
-    return True
-  except:
-     pass
-  return False
+	return False
 
 def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,includedsubnets,excludedsubnets,excludeddomains, includephones, includeaps):
 	cdpdevicecomplete = []
