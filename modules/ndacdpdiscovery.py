@@ -211,18 +211,22 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 							networkgraphdict_neighbors['neighbor'] = cdpneistrip
 							networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
 							networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
+							networkgraphdict_neighbors['device'] = cdpnei[2]
+							networkgraphdict_neighbors['ip'] = cdpnei[1]
 							networkgraphlist_neighbors.append(networkgraphdict_neighbors)
 							continue
 						else:
 							continue
 					# AP Check
-					if re.match('.*(AIR-|AP).*',cdpneidevice):
+					if re.match('.*(AIR-| AP).*',cdpneidevice):
 						if includeaps == 1:
 							# Append Network Graph data
 							networkgraphdict_neighbors = {}
 							networkgraphdict_neighbors['neighbor'] = cdpneistrip
 							networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
 							networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
+							networkgraphdict_neighbors['device'] = cdpnei[2]
+							networkgraphdict_neighbors['ip'] = cdpnei[1]
 							networkgraphlist_neighbors.append(networkgraphdict_neighbors)
 							continue
 						else:
@@ -235,7 +239,10 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 						reachable = 1
 					# Reachability Check Stage 2
 					if reachable == 0:
-						cdpneiip = cdpneiosfull[8]
+						try:
+							cdpneiip = cdpneiosfull[8]
+						except:
+							continue
 						if sshcheck(cdpneiip,22) == True:
 							reachable = 1
 						if reachable == 0 and sshcheck(cdpneiip,23) == True:
@@ -246,6 +253,8 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 							networkgraphdict_neighbors['neighbor'] = cdpneistrip
 							networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
 							networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
+							networkgraphdict_neighbors['device'] = cdpnei[2]
+							networkgraphdict_neighbors['ip'] = cdpnei[1]
 							networkgraphlist_neighbors.append(networkgraphdict_neighbors)
 							continue
 					if reachable == 1:
@@ -275,6 +284,8 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 							networkgraphdict_neighbors['neighbor'] = cdpneistrip
 							networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
 							networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
+							networkgraphdict_neighbors['device'] = cdpnei[2]
+							networkgraphdict_neighbors['ip'] = cdpnei[1]
 							networkgraphlist_neighbors.append(networkgraphdict_neighbors)
 		except IndexError:
 			print 'Could not connect to device ' + cdpneiip
@@ -454,18 +465,22 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 									networkgraphdict_neighbors['neighbor'] = cdpneistrip
 									networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
 									networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
+									networkgraphdict_neighbors['device'] = cdpnei[2]
+									networkgraphdict_neighbors['ip'] = cdpnei[1]
 									networkgraphlist_neighbors.append(networkgraphdict_neighbors)
 									continue
 								else:
 									continue
 							# AP Check
-							if re.match('.*(AIR-|AP).*',cdpneidevice):
+							if re.match('.*(AIR-| AP).*',cdpneidevice):
 								if includeaps == 1:
 									# Append Network Graph data
 									networkgraphdict_neighbors = {}
 									networkgraphdict_neighbors['neighbor'] = cdpneistrip
 									networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
 									networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
+									networkgraphdict_neighbors['device'] = cdpnei[2]
+									networkgraphdict_neighbors['ip'] = cdpnei[1]
 									networkgraphlist_neighbors.append(networkgraphdict_neighbors)
 									continue
 								else:
@@ -478,7 +493,10 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 								reachable = 1
 							# Reachability Check Stage 2
 							if reachable == 0:
-								cdpneiip = cdpneiosfull[8]
+								try:
+									cdpneiip = cdpneiosfull[8]
+								except:
+									continue
 								if sshcheck(cdpneiip,22) == True:
 									reachable = 1
 								if reachable == 0 and sshcheck(cdpneiip,23) == True:
@@ -489,6 +507,8 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 									networkgraphdict_neighbors['neighbor'] = cdpneistrip
 									networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
 									networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
+									networkgraphdict_neighbors['device'] = cdpnei[2]
+									networkgraphdict_neighbors['ip'] = cdpnei[1]
 									networkgraphlist_neighbors.append(networkgraphdict_neighbors)
 									continue
 							if reachable == 1:
@@ -517,6 +537,8 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 									networkgraphdict_neighbors['neighbor'] = cdpneistrip
 									networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
 									networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
+									networkgraphdict_neighbors['device'] = cdpnei[2]
+									networkgraphdict_neighbors['ip'] = cdpnei[1]
 									networkgraphlist_neighbors.append(networkgraphdict_neighbors)
 					# Add Network Graph Dict to master list
 					networkgraphdict['neighbors'] = networkgraphlist_neighbors
