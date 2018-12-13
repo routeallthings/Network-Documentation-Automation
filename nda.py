@@ -210,6 +210,11 @@ if devicediscoveryincludephones == None or devicediscoveryincludephones == False
 	devicediscoveryincludephones = 0
 else:
 	devicediscoveryincludephones = 1
+devicediscoveryincludeaps = configdict.get('DeviceDiscoveryIncludeAPs')
+if devicediscoveryincludeaps == None or devicediscoveryincludeaps == False:
+	devicediscoveryincludeaps = 1
+else:
+	devicediscoveryincludeaps = 1
 devicediscoverymaptitlev = configdict.get('DeviceDiscoveryMapTitle')
 if devicediscoverymaptitlev == None:
 	devicediscoverymaptitlev = 'Network Topology'
@@ -466,7 +471,7 @@ if __name__ == "__main__":
 		print '###################################################'
 		print 'Starting SSH CDP Discovery, please be patient.'
 		print '###################################################'
-		cdpdevicecomplete,networkgraphlist = cdpdiscovery(usernamelist,devicediscoveryseedv,devicediscoverysshtypev,devicediscoverydepthv,includedsubnets,excludedsubnets,excludeddomains)
+		cdpdevicecomplete,networkgraphlist = cdpdiscovery(usernamelist,devicediscoveryseedv,devicediscoverysshtypev,devicediscoverydepthv,includedsubnets,excludedsubnets,excludeddomains, devicediscoveryincludephones, devicediscoveryincludeaps)
 		if cdpdevicecomplete:
 			for cdpdevice in cdpdevicecomplete:
 				cdpduplicate = 0

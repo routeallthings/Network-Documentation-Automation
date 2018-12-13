@@ -1,10 +1,11 @@
 Value Required DESTINATION_HOST (\S+)
-Value MANAGEMENT_IP (\d+\.\d+\.\d+\.\d+|\w+\.\w+\.\w+)
+Value INTERFACE_IP (\d+\.\d+\.\d+\.\d+|\w+\.\w+\.\w+)
 Value PLATFORM (.*)
 Value REMOTE_PORT (.*)
 Value LOCAL_PORT (.*)
 Value SOFTWARE_VERSION (.*$)
 Value CAPABILITIES (.*)
+Value MANAGEMENT_IP (\d+\.\d+\.\d+\.\d+|\w+\.\w+\.\w+)
 
 Start
   ^Device ID: ${DESTINATION_HOST}
@@ -12,11 +13,17 @@ Start
   ^Platform\s*:\s*${PLATFORM}\s*,\s*Capabilities\s*:\s*${CAPABILITIES}
   ^Interface: ${LOCAL_PORT},  Port ID \(outgoing port\): ${REMOTE_PORT}
   ^Version : -> GetVersion
+  ^Management address\(es\)\s*:\s* -> GetManagementIP
+  ^-------------------------.* -> Record
+  ^Total cdp entries displayed.* -> Record
 
 ParseIP
-  ^.*IP address: ${MANAGEMENT_IP} -> Start
+  ^.*IP address: ${INTERFACE_IP} -> Start
   ^Platform\s*:\s*${PLATFORM}\s*,\s*Capabilities\s*:\s*${CAPABILITIES} -> Start
-  ^.* -> Start
 
 GetVersion
-^${SOFTWARE_VERSION} -> Record Start
+  ^${SOFTWARE_VERSION} -> Start
+  
+GetManagementIP
+  ^.*IP address: ${MANAGEMENT_IP} -> Start
+
