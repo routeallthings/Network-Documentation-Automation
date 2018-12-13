@@ -142,7 +142,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 	sshdomain = sshnet_connect.send_command(showdomain)
 	if sshdomain != '':
 		sshdomainadd = re.search('.*Default domain is (\S+).*',sshdomain).group(1)
-		cdpneiname = sshdevicehostname + sshdomainadd
+		cdpneiname = sshdevicehostname + '.' + sshdomainadd
 	else:
 		cdpneiname = sshdevicehostname
 	for string in excludeddomains:
@@ -173,15 +173,18 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 				if string == '':
 					cdpneistrip = cdpneiname
 					break
-				if string in cdpneiname and not string == '':
-					cdpneistrip = cdpneiname.replace(string,'').rstrip('.')
+				if string in cdpneiname:
+					# Bug fix to match the full string
+					if cdpneiname.endswith(string):
+						cdpneistrip = cdpneiname.replace(string,'').rstrip('.')
 					# Bug fix for nexus names where it pulls in the SN into the host name in the SSH output
 					if re.match('\S+\.\(\S+\)',cdpneistrip):
 						cdpneistrip = re.search('(\S+)\.\(\S+\)',cdpneistrip).group(1)
-					# Bug fix for names that are longer than the max CDP allows
-					if len(cdpneistrip) == 40:
-						cdprelength = re.compile('(\S+)\.' + string[:10] + '.*')
-						cdpneistrip = re.search(cdprelength,cdpneistrip).group(1)
+					break
+				# Bug fix for names that are longer than the max CDP allows
+				if len(cdpneiname) == 40:
+					cdprelength = re.compile('(\S+)\.' + string[:10] + '.*')
+					cdpneistrip = re.search(cdprelength,cdpneiname).group(1)
 					break
 			if cdpneistrip == '':
 				cdpneistrip = cdpneiname
@@ -395,22 +398,25 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 					sshdomain = sshnet_connect.send_command(showdomain)
 					if sshdomain != '':
 						sshdomainadd = re.search('.*Default domain is (\S+).*',sshdomain).group(1)
-						cdpneiname = sshdevicehostname + sshdomainadd
+						cdpneiname = sshdevicehostname + '.' + sshdomainadd
 					else:
 						cdpneiname = sshdevicehostname
 					for string in excludeddomains:
 						if string == '':
 							cdpneistrip = cdpneiname
 							break
-						if string in cdpneiname and not string == '':
-							cdpneistrip = cdpneiname.replace(string,'').rstrip('.')
+						if string in cdpneiname:
+							# Bug fix to match the full string
+							if cdpneiname.endswith(string):
+								cdpneistrip = cdpneiname.replace(string,'').rstrip('.')
 							# Bug fix for nexus names where it pulls in the SN into the host name in the SSH output
 							if re.match('\S+\.\(\S+\)',cdpneistrip):
 								cdpneistrip = re.search('(\S+)\.\(\S+\)',cdpneistrip).group(1)
-							# Bug fix for names that are longer than the max CDP allows
-							if len(cdpneistrip) == 40:
-								cdprelength = re.compile('(\S+)\.' + string[:10] + '.*')
-								cdpneistrip = re.search(cdprelength,cdpneistrip).group(1)
+							break
+						# Bug fix for names that are longer than the max CDP allows
+						if len(cdpneiname) == 40:
+							cdprelength = re.compile('(\S+)\.' + string[:10] + '.*')
+							cdpneistrip = re.search(cdprelength,cdpneiname).group(1)
 							break
 					if cdpneistrip == '':
 						cdpneistrip = cdpneiname
