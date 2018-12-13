@@ -312,7 +312,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 	print 'Completed discovery on the seed device'
 	
 	# Attempt Subsequent Discovery Levels (Non-Threaded)
-	def cdpdiscoverysub(usernamelist,sshdeviceip,cdptype,cdpvendor,includedsubnets,excludedsubnets,excludeddomains):
+	def cdpdiscoverysub(usernamelist,sshdeviceip,cdptype,cdpvendor,includedsubnets,excludedsubnets,excludeddomains,includephones,includeaps):
 		try:
 			# Duplicate IP Detection
 			for dupip in cdpduplicateip:
@@ -337,11 +337,11 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 			# FSM Templates
 			if subnetcheck == 1:
 				cdpdevicetype = cdpvendor.lower() + '_' + cdptype.lower()
-				if "cisco_ios" in cdpdevicetypev.lower():
+				if "cisco_ios" in cdpdevicetype.lower():
 					templatename = "cisco_ios_show_cdp_nei_detail.template"
-				if "cisco_xe" in cdpdevicetypev.lower():
+				if "cisco_xe" in cdpdevicetype.lower():
 					templatename = "cisco_ios_show_cdp_nei_detail.template"
-				if "cisco_nxos" in cdpdevicetypev.lower():
+				if "cisco_nxos" in cdpdevicetype.lower():
 					templatename = "cisco_nxos_show_cdp_nei_detail.template"
 				# Create template file path
 				templatefile = os.path.join(templatepath,templatename)
@@ -582,7 +582,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 				# Continue with detection
 				cdpvendor = cdpdevice.get('Vendor').encode('utf-8')
 				cdptype = cdpdevice.get('Type').encode('utf-8')
-				cdpdiscoverysub(usernamelist,cdpip,cdptype,cdpvendor,includedsubnets,excludedsubnets,excludeddomains)
+				cdpdiscoverysub(usernamelist,cdpip,cdptype,cdpvendor,includedsubnets,excludedsubnets,excludeddomains, includephones, includeaps)
 				# Add loop counts
 				cdpmaxloopiteration = cdpmaxloopiteration + 1
 			if cdpdiscoverydepth <= cdpdiscoverydepthv:
