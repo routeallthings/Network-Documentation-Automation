@@ -42,7 +42,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 	cdpduplicatehostname = []
 	networkgraphlist = []
 	networkgraphlist_neighbors = []
-	showdomain = 'sh run | i domain-name'
+	showdomain = 'show hosts | i domain'
 	# Create Commands
 	showcdp = "show cdp neighbor detail"
 	# Duplicate IP Detection (Add Core)
@@ -123,7 +123,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 	cdpneistrip = ''
 	sshdomain = sshnet_connect.send_command(showdomain)
 	if sshdomain != '':
-		sshdomainadd = re.search('\S+\s+\S+\s+(\S+).*',sshdomain).group(1)
+		sshdomainadd = re.search('.*Default domain is (\S+).*',sshdomain).group(1)
 		cdpneiname = sshdevicehostname + sshdomainadd
 	else:
 		cdpneiname = sshdevicehostname
@@ -181,7 +181,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 					if re.match('.*ios.*',cdpneiosfull.lower()):
 						cdpneios = 'ios'
 						cdpnexthop = 1
-					if re.match('.*(\iosxe|xe|universal).*',cdpneiosfull.lower()):
+					if re.match('.*(iosxe|xe|universal).*',cdpneiosfull.lower()):
 						cdpneios = 'xe'
 						cdpnexthop = 1
 					if re.match('.*nx-os|nexus.*',cdpneiosfull.lower()):
@@ -325,7 +325,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 					cdpneistrip = ''
 					sshdomain = sshnet_connect.send_command(showdomain)
 					if sshdomain != '':
-						sshdomainadd = re.search('\S+\s+\S+\s+(\S+).*',sshdomain).group(1)
+						sshdomainadd = re.search('.*Default domain is (\S+).*',sshdomain).group(1)
 						cdpneiname = sshdevicehostname + sshdomainadd
 					else:
 						cdpneiname = sshdevicehostname
@@ -370,7 +370,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 							if re.match('.*ios.*',cdpneiosfull.lower()):
 								cdpneios = 'ios'
 								cdpnexthop = 1
-							if re.match('.*(\iosxe|xe|universal).*',cdpneiosfull.lower()):
+							if re.match('.*(iosxe|xe|universal).*',cdpneiosfull.lower()):
 								cdpneios = 'xe'
 								cdpnexthop = 1
 							if re.match('.*nx-os|nexus.*',cdpneiosfull.lower()):
