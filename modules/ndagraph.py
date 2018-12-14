@@ -42,6 +42,7 @@ def networkgraph(topologyfile,topologyname, networkgraphlist, fullinventorylist,
 						if modswitch == mod['switch']:	
 							moddup = 1
 							break
+					# Add if not duplicate
 					if moddup == 0:	
 						moduledict = {}
 						moduledict['switch'] = modswitch
