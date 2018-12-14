@@ -28,16 +28,57 @@ def networkgraph(topologyfile,topologyname, networkgraphlist, fullinventorylist,
 		# Get device model
 		stackv = 0
 		stackinv = []
-		devicemodellist = filter(lambda x: x['Hostname'] == devicehostname, fullinventorylist)
-		# Chassis
-		for modeldict in devicemodellist:
+		moduleinv = []
+		deviceinv = filter(lambda x: x['Hostname'] == devicehostname, fullinventorylist)
+		# Get Modules and add to inventory
+		for modeldict in deviceinv:
+			if re.match('.*\-NM\-.*',modeldict['Product ID']):
+				try:
+					modswitch = re.search('.*Switch (\d) .*',modeldict['Description']).group(1)
+					modproductid = re.search('.*(NM\S+).*',modeldict['Product ID']).group(1)
+					# Duplicate Detect
+					moddup = 0
+					for mod in moduleinv:
+						if modswitch == mod['switch']:	
+							moddup = 1
+							break
+					if moddup == 0:	
+						moduledict = {}
+						moduledict['switch'] = modswitch
+						moduledict['module'] = modproductid
+						moduleinv.append(moduledict)
+				except:
+					continue
+		# Get Chassis Information
+		for modeldict in deviceinv:
 			if re.match('.*[Cc]hassis$',modeldict['Description']):
 				if modeldict['Stack Number'] == '':
-					devicemodel = modeldict['Product ID']
+					# Add module if one exists to chassis
+					modelmodule = ''
+					if moduleinv != []:
+						for mod in moduleinv:
+							modelmodule = mod['module']
+					# Create full single chassis (including module)
+					devicemodel = modeldict['Product ID'] + ' ' + modelmodule
 					break
 				else:
+					# Detected multiple stack members
 					stackv = 1
-					stackinv.append('(' + modeldict['Stack Number'] + ') ' +  modeldict['Product ID'])
+					# Find module if attached to stack member and add
+					print modeldict['Stack Number']
+					test = raw_input('pause')
+					if 'switch' in modeldict['Stack Number'].lower():
+						modswitch = re.search('.*Switch (\d).*',modeldict['Stack Number']).group(1)
+					else:
+						modswitch = modeldict['Stack Number']
+					modmodulelist = filter(lambda x: x['switch'] == modswitch, moduleinv)
+					modelmodule = ''
+					if modmodulelist != []:
+						for mod in modmodulelist:
+							modelmodule = mod['module']
+					if modelmodule != '':
+						modelmodule = '[' + modelmodule + ']'
+					stackinv.append('(' + modswitch + ') ' +  modeldict['Product ID'] + ' ' + modelmodule)
 		if stackv == 1:
 			# convert list of switches (if stacked) into a format for the label
 			devicemodel = '\n'.join(stackinv)

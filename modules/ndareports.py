@@ -154,7 +154,11 @@ def fullinventoryreport(fullinventorylist,exportlocation):
 		adjusted_width = (max_length + 2) * 1.2
 		ws2.column_dimensions[column].width = adjusted_width
 	# Save File
-	wb.save(filename = dest_path)
+	try:
+		wb.save(filename = dest_path)
+	except:
+		print 'Error creating the report: ' + dest_path + '. File might be currently in use.'
+		return
 	# Sorting
 	try:
 		# Tab 1
@@ -314,7 +318,11 @@ def arpmacreport(iparptablelist,ipmactablelist,mactablelist,exportlocation):
 		adjusted_width = (max_length + 2) * 1.2
 		ws2.column_dimensions[column].width = adjusted_width
 	# Save workbook
-	wb.save(filename = dest_path)
+	try:
+		wb.save(filename = dest_path)
+	except:
+		print 'Error creating the report: ' + dest_path + '. File might be currently in use.'
+		return
 	# Sorting
 	try:
 		# Tab 1
@@ -477,7 +485,11 @@ def interfacereport (l2interfacelist,l3interfacelist,poeinterfacelist,exportloca
 		adjusted_width = (max_length + 2) * 1.2
 		ws3.column_dimensions[column].width = adjusted_width
 	# Save File
-	wb.save(filename = dest_path)
+	try:
+		wb.save(filename = dest_path)
+	except:
+		print 'Error creating the report: ' + dest_path + '. File might be currently in use.'
+		return
 	# Sorting
 	try:
 		# Tab 1
@@ -543,7 +555,11 @@ def poereport(poeinterfacelist,exportlocation):
 		adjusted_width = (max_length + 2) * 1.2
 		ws1.column_dimensions[column].width = adjusted_width
 	# Save File
-	wb.save(filename = dest_path)
+	try:
+		wb.save(filename = dest_path)
+	except:
+		print 'Error creating the report: ' + dest_path + '. File might be currently in use.'
+		return
 	# Sorting
 	try:
 		excel = win32com.client.Dispatch("Excel.Application")
@@ -589,7 +605,11 @@ def healthcheckreport(healthchecklist,exportlocation):
 		adjusted_width = (max_length + 2) * 1.2
 		ws1.column_dimensions[column].width = adjusted_width
 	# Save File
-	wb.save(filename = dest_path)
+	try:
+		wb.save(filename = dest_path)
+	except:
+		print 'Error creating the report: ' + dest_path + '. File might be currently in use.'
+		return
 	# Sorting
 	try:
 		excel = win32com.client.Dispatch("Excel.Application")
