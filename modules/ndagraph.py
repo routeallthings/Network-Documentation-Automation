@@ -29,6 +29,7 @@ def networkgraph(topologyfile,topologyname, networkgraphlist, fullinventorylist,
 		stackv = 0
 		stackinv = []
 		devicemodellist = filter(lambda x: x['Hostname'] == devicehostname, fullinventorylist)
+		# Chassis
 		for modeldict in devicemodellist:
 			if re.match('.*[Cc]hassis$',modeldict['Description']):
 				if modeldict['Stack Number'] == '':

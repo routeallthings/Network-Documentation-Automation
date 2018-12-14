@@ -93,7 +93,7 @@ def fullinventoryreport(fullinventorylist,exportlocation):
 	# Continue on with work
 	startrow = 2
 	for row in fullinventorylist:
-		if 'chassis' in row.get('Description').lower() or 'k9' in row.get('Description').lower() and not 'fan' in row.get('Description').lower():
+		if row.get('Description').lower().endswith('chassis') == True or 'k9' in row.get('Description').lower():
 			# Attempt to find the age of the device
 			try:
 				age_base = 1996

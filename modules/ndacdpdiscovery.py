@@ -145,15 +145,28 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 		cdpneiname = sshdevicehostname + '.' + sshdomainadd
 	else:
 		cdpneiname = sshdevicehostname
+	# Excluded Domain Section for Neighbors of Seed Router
+	cdpneistrip = ''
 	for string in excludeddomains:
 		if string == '':
 			cdpneistrip = cdpneiname
 			break
-		if string in cdpneiname and not string == '':
-			cdpneistrip = cdpneiname.replace(string,'').rstrip('.')
+		if string in cdpneiname:
+			# Bug fix to match the full string
+			if string in cdpneiname:
+				cdpneistrip = cdpneiname.replace(string,'').rstrip('.')
+			# Bug fix for nexus names where it pulls in the SN into the host name in the SSH output
+			if re.match('\S+\.\(\S+\)',cdpneistrip):
+				cdpneistrip = re.search('(\S+)\.\(\S+\)',cdpneistrip).group(1)
+			break
+		# Bug fix for names that are longer than the max CDP allows
+		if len(cdpneiname) == 40:
+			cdprelength = re.compile('(\S+)\.' + string[:10] + '.*')
+			cdpneistrip = re.search(cdprelength,cdpneiname).group(1)
 			break
 	if cdpneistrip == '':
 		cdpneistrip = cdpneiname
+	# Build initial seed device data for the network graph
 	networkgraphdict['hostname'] = cdpneistrip
 	networkgraphdict['ip'] = sshdeviceip
 	# Starting loop
@@ -168,6 +181,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 			cdpneiosfull = cdpnei[5]
 			subnetcheck = 0
 			subnetcheck2 = 0
+			# Excluded Domain Section for Neighbors of Seed Router
 			cdpneistrip = ''
 			for string in excludeddomains:
 				if string == '':
@@ -175,7 +189,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 					break
 				if string in cdpneiname:
 					# Bug fix to match the full string
-					if cdpneiname.endswith(string):
+					if string in cdpneiname:
 						cdpneistrip = cdpneiname.replace(string,'').rstrip('.')
 					# Bug fix for nexus names where it pulls in the SN into the host name in the SSH output
 					if re.match('\S+\.\(\S+\)',cdpneistrip):
@@ -188,6 +202,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 					break
 			if cdpneistrip == '':
 				cdpneistrip = cdpneiname
+			# Subnet Check
 			if cdpneiip == None or cdpneiip == '':
 				subnetcheck2 = 0
 			else:
@@ -418,7 +433,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 							break
 						if string in cdpneiname:
 							# Bug fix to match the full string
-							if cdpneiname.endswith(string):
+							if string in cdpneiname:
 								cdpneistrip = cdpneiname.replace(string,'').rstrip('.')
 							# Bug fix for nexus names where it pulls in the SN into the host name in the SSH output
 							if re.match('\S+\.\(\S+\)',cdpneistrip):
@@ -450,96 +465,122 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 							if string == '':
 								cdpneistrip = cdpneiname
 								break
-							if string in cdpneiname and not string == '':
-								cdpneistrip = cdpneiname.replace(string,'').rstrip('.')
+							if string in cdpneiname:
+								# Bug fix to match the full string
+								if string in cdpneiname:
+									cdpneistrip = cdpneiname.replace(string,'').rstrip('.')
+								# Bug fix for nexus names where it pulls in the SN into the host name in the SSH output
+								if re.match('\S+\.\(\S+\)',cdpneistrip):
+									cdpneistrip = re.search('(\S+)\.\(\S+\)',cdpneistrip).group(1)
+								break
+							# Bug fix for names that are longer than the max CDP allows
+							if len(cdpneiname) == 40:
+								cdprelength = re.compile('(\S+)\.' + string[:10] + '.*')
+								cdpneistrip = re.search(cdprelength,cdpneiname).group(1)
 								break
 						if cdpneistrip == '':
 							cdpneistrip = cdpneiname
-						if 'cisco' in cdpneidevice.lower() or 'cisco' in cdpneiosfull.lower():
-							cdpneivend = 'cisco'
-							# Phone Check
-							if re.match('.*phone.*',cdpneidevice.lower()):
-								if includephones == 1:
-									# Append Network Graph data
-									networkgraphdict_neighbors = {}
-									networkgraphdict_neighbors['neighbor'] = cdpneistrip
-									networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
-									networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
-									networkgraphdict_neighbors['device'] = cdpnei[2]
-									networkgraphdict_neighbors['ip'] = cdpnei[1]
-									networkgraphlist_neighbors.append(networkgraphdict_neighbors)
-									continue
-								else:
-									continue
-							# AP Check
-							if re.match('.*(AIR-| AP).*',cdpneidevice):
-								if includeaps == 1:
-									# Append Network Graph data
-									networkgraphdict_neighbors = {}
-									networkgraphdict_neighbors['neighbor'] = cdpneistrip
-									networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
-									networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
-									networkgraphdict_neighbors['device'] = cdpnei[2]
-									networkgraphdict_neighbors['ip'] = cdpnei[1]
-									networkgraphlist_neighbors.append(networkgraphdict_neighbors)
-									continue
-								else:
-									continue
-							# Reachability Check Stage 1
-							reachable = 0
-							if sshcheck(cdpneiip,22) == True:
-								reachable = 1
-							if reachable == 0 and sshcheck(cdpneiip,23) == True:
-								reachable = 1
-							# Reachability Check Stage 2
-							if reachable == 0:
-								try:
-									cdpneiip = cdpneiosfull[8]
-								except:
-									continue
+						# Subnet check for each device		
+						subnetcheck = 0
+						subnetcheck2 = 0
+						if cdpneiip == None or cdpneiip == '':
+							subnetcheck2 = 0
+						else:
+							subnetcheck2 = 1
+						if subnetcheck2 == 1:
+							for subnetwork in includedsubnets:
+									if addressinnetwork(cdpneiip,subnetwork) == True:
+										subnetcheck = 1
+						if subnetcheck2 == 1:
+							for subnetwork in excludedsubnets:
+									if addressinnetwork(cdpneiip,subnetwork) == True:
+										subnetcheck = 0
+						if subnetcheck == 1:
+							if 'cisco' in cdpneidevice.lower() or 'cisco' in cdpneiosfull.lower():
+								cdpneivend = 'cisco'
+								# Phone Check
+								if re.match('.*phone.*',cdpneidevice.lower()):
+									if includephones == 1:
+										# Append Network Graph data
+										networkgraphdict_neighbors = {}
+										networkgraphdict_neighbors['neighbor'] = cdpneistrip
+										networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
+										networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
+										networkgraphdict_neighbors['device'] = cdpnei[2]
+										networkgraphdict_neighbors['ip'] = cdpnei[1]
+										networkgraphlist_neighbors.append(networkgraphdict_neighbors)
+										continue
+									else:
+										continue
+								# AP Check
+								if re.match('.*(AIR-| AP).*',cdpneidevice):
+									if includeaps == 1:
+										# Append Network Graph data
+										networkgraphdict_neighbors = {}
+										networkgraphdict_neighbors['neighbor'] = cdpneistrip
+										networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
+										networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
+										networkgraphdict_neighbors['device'] = cdpnei[2]
+										networkgraphdict_neighbors['ip'] = cdpnei[1]
+										networkgraphlist_neighbors.append(networkgraphdict_neighbors)
+										continue
+									else:
+										continue
+								# Reachability Check Stage 1
+								reachable = 0
 								if sshcheck(cdpneiip,22) == True:
 									reachable = 1
 								if reachable == 0 and sshcheck(cdpneiip,23) == True:
 									reachable = 1
+								# Reachability Check Stage 2
 								if reachable == 0:
-									# Device still unreachable, adding to topology as an edge node
-									networkgraphdict_neighbors = {}
-									networkgraphdict_neighbors['neighbor'] = cdpneistrip
-									networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
-									networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
-									networkgraphdict_neighbors['device'] = cdpnei[2]
-									networkgraphdict_neighbors['ip'] = cdpnei[1]
-									networkgraphlist_neighbors.append(networkgraphdict_neighbors)
-									continue
-							if reachable == 1:
-								if re.match('.*ios.*',cdpneiosfull.lower()):
-									cdpneios = 'ios'
-									cdpnexthop = 1
-								if re.match('.*(iosxe|xe).*',cdpneiosfull.lower()):
-									cdpneios = 'xe'
-									cdpnexthop = 1
-								if re.match('.*nx-os|nexus.*',cdpneiosfull.lower()):
-									cdpneios = 'nxos'
-									cdpnexthop = 1
-								for cdpdevice in cdpdevicetemp:
-									cdpdeviceip = cdpdevice.get('Device IPs').encode('utf-8')
-									if cdpdeviceip == cdpneiip:
-										cdpalreadyexists = 1
-								if cdpalreadyexists == 0 and cdpnexthop == 1:
-									# Append CDP data
-									cdpdevicedict['Device IPs'] = cdpneiip.decode('utf-8')
-									cdpdevicedict['Vendor'] = cdpneivend.decode('utf-8')
-									cdpdevicedict['Type'] = cdpneios.decode('utf-8')
-									cdpdevicetemp.append(cdpdevicedict)
-									print 'Found new device, adding to list'
-									# Append Network Graph data
-									networkgraphdict_neighbors = {}
-									networkgraphdict_neighbors['neighbor'] = cdpneistrip
-									networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
-									networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
-									networkgraphdict_neighbors['device'] = cdpnei[2]
-									networkgraphdict_neighbors['ip'] = cdpnei[1]
-									networkgraphlist_neighbors.append(networkgraphdict_neighbors)
+									try:
+										cdpneiip = cdpneiosfull[8]
+									except:
+										continue
+									if sshcheck(cdpneiip,22) == True:
+										reachable = 1
+									if reachable == 0 and sshcheck(cdpneiip,23) == True:
+										reachable = 1
+									if reachable == 0:
+										# Device still unreachable, adding to topology as an edge node
+										networkgraphdict_neighbors = {}
+										networkgraphdict_neighbors['neighbor'] = cdpneistrip
+										networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
+										networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
+										networkgraphdict_neighbors['device'] = cdpnei[2]
+										networkgraphdict_neighbors['ip'] = cdpnei[1]
+										networkgraphlist_neighbors.append(networkgraphdict_neighbors)
+										continue
+								if reachable == 1:
+									if re.match('.*ios.*',cdpneiosfull.lower()):
+										cdpneios = 'ios'
+										cdpnexthop = 1
+									if re.match('.*(iosxe|xe).*',cdpneiosfull.lower()):
+										cdpneios = 'xe'
+										cdpnexthop = 1
+									if re.match('.*nx-os|nexus.*',cdpneiosfull.lower()):
+										cdpneios = 'nxos'
+										cdpnexthop = 1
+									for cdpdevice in cdpdevicetemp:
+										cdpdeviceip = cdpdevice.get('Device IPs').encode('utf-8')
+										if cdpdeviceip == cdpneiip:
+											cdpalreadyexists = 1
+									if cdpalreadyexists == 0 and cdpnexthop == 1:
+										# Append CDP data
+										cdpdevicedict['Device IPs'] = cdpneiip.decode('utf-8')
+										cdpdevicedict['Vendor'] = cdpneivend.decode('utf-8')
+										cdpdevicedict['Type'] = cdpneios.decode('utf-8')
+										cdpdevicetemp.append(cdpdevicedict)
+										print 'Found new device, adding to list'
+										# Append Network Graph data
+										networkgraphdict_neighbors = {}
+										networkgraphdict_neighbors['neighbor'] = cdpneistrip
+										networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
+										networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
+										networkgraphdict_neighbors['device'] = cdpnei[2]
+										networkgraphdict_neighbors['ip'] = cdpnei[1]
+										networkgraphlist_neighbors.append(networkgraphdict_neighbors)
 					# Add Network Graph Dict to master list
 					networkgraphdict['neighbors'] = networkgraphlist_neighbors
 					networkgraphlist.append(networkgraphdict)
