@@ -9,6 +9,7 @@
 # Import Modules
 import pydot
 import re
+import time
 
 def networkgraph(topologyfile,topologyname, networkgraphlist, fullinventorylist, l2interfacelist, l3interfacelist):
 	# Create lists
@@ -87,6 +88,7 @@ def networkgraph(topologyfile,topologyname, networkgraphlist, fullinventorylist,
 		node = pydot.Node(devicehostname, label=(devicelabel))
 		graph.add_node(node)
 		dupdetect.append(devicehostname)
+		time.sleep(.1)
 	# Create all secondary network devices
 	for device in networkgraphlist:
 		deviceneighborlist = device['neighbors']
@@ -108,6 +110,7 @@ def networkgraph(topologyfile,topologyname, networkgraphlist, fullinventorylist,
 				node = pydot.Node(deviceneighbor, label=(devicelabel))
 				graph.add_node(node)
 				dupdetect.append(deviceneighbor)
+		time.sleep(.1)
 	# Create all network device relationships
 	for device in networkgraphlist:
 		devicehostname = device['hostname']
@@ -131,6 +134,7 @@ def networkgraph(topologyfile,topologyname, networkgraphlist, fullinventorylist,
 				# Add edge node
 				edge = pydot.Edge(devicehostname,deviceneighbor,color='#FF0000',label=('s:' + sourceinterface + '\n' + 'd:' + destinationinterface), fontcolor='#0000FF', fontsize=8)
 				graph.add_edge(edge)
+		time.sleep(.1)
 	# Create final drawing
 	graph.write_pdf(topologyfile)
 			
