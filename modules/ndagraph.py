@@ -143,10 +143,10 @@ def networkgraph(topologyfile,topologyname, networkgraphlist, fullinventorylist,
 							pathcolor = '#F4D03F'
 						if 'LRM' in optdesc:
 							pathlabel = 'LRM 10GB'
-							pathcolor = '#A569BD'
+							pathcolor = '#C90000'
 						if 'CU' in optdesc or 'AOC' in optdesc or 'CX4' in optdesc:
 							pathlabel = 'Direct Attach Copper 10GB'
-							pathcolor = '#2ECC71'
+							pathcolor = '#A569BD'
 						# 1GB optics
 						if 'SX' in optdesc:
 							pathlabel = 'Multimode 1GB'
