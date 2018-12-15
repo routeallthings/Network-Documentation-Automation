@@ -315,6 +315,7 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 				if re.match('^GLC|SFP.*',inv_pid):
 					inv_desc = subrow[1]
 				# Get Version number from already created list
+				inv_ver = ''
 				for subrow1 in tempversioninfo:
 					if sshdevicehostname == subrow1.get('Hostname'):
 						inv_ver = subrow1.get('Version')
@@ -336,6 +337,7 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 				inv_pid = subrow[2]
 				inv_sn = subrow[4]
 				inv_desc = subrow[1]
+				inv_ver = ''
 				# Get Version number from already created list
 				for subrow1 in tempversioninfo:
 					if sshdevicehostname == subrow1.get('Hostname'):
