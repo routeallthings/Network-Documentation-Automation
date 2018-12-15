@@ -212,7 +212,7 @@ else:
 	devicediscoveryincludephones = 1
 devicediscoveryincludeaps = configdict.get('DeviceDiscoveryIncludeAPs')
 if devicediscoveryincludeaps == None or devicediscoveryincludeaps == False:
-	devicediscoveryincludeaps = 1
+	devicediscoveryincludeaps = 0
 else:
 	devicediscoveryincludeaps = 1
 devicediscoverymaptitlev = configdict.get('DeviceDiscoveryMapTitle')
