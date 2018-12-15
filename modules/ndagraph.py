@@ -66,8 +66,6 @@ def networkgraph(topologyfile,topologyname, networkgraphlist, fullinventorylist,
 					# Detected multiple stack members
 					stackv = 1
 					# Find module if attached to stack member and add
-					print modeldict['Stack Number']
-					test = raw_input('pause')
 					if 'switch' in modeldict['Stack Number'].lower():
 						modswitch = re.search('.*Switch (\d).*',modeldict['Stack Number']).group(1)
 					else:

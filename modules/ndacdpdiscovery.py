@@ -255,9 +255,9 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 					# Reachability Check Stage 2
 					if reachable == 0:
 						try:
-							cdpneiip = cdpneiosfull[8]
+							cdpneiip = cdpnei[8]
 						except:
-							continue
+							cdpneiip = cdpnei[1]
 						if sshcheck(cdpneiip,22) == True:
 							reachable = 1
 						if reachable == 0 and sshcheck(cdpneiip,23) == True:
@@ -286,6 +286,9 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 						for cdpdevice in cdpdevicetemp:
 							cdpdeviceip = cdpdevice.get('Device IPs').encode('utf-8')
 							if cdpdeviceip == cdpneiip:
+								cdpalreadyexists = 1
+						for hostname in cdpduplicatehostname:
+							if hostname == cdpneistrip:
 								cdpalreadyexists = 1
 						if cdpalreadyexists == 0 and cdpnexthop == 1:
 							# Append CDP data
@@ -535,9 +538,9 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 								# Reachability Check Stage 2
 								if reachable == 0:
 									try:
-										cdpneiip = cdpneiosfull[8]
+										cdpneiip = cdpnei[8]
 									except:
-										continue
+										cdpneiip = cdpnei[1]
 									if sshcheck(cdpneiip,22) == True:
 										reachable = 1
 									if reachable == 0 and sshcheck(cdpneiip,23) == True:
@@ -565,6 +568,9 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 									for cdpdevice in cdpdevicetemp:
 										cdpdeviceip = cdpdevice.get('Device IPs').encode('utf-8')
 										if cdpdeviceip == cdpneiip:
+											cdpalreadyexists = 1
+									for hostname in cdpduplicatehostname:
+										if hostname == cdpneistrip:
 											cdpalreadyexists = 1
 									if cdpalreadyexists == 0 and cdpnexthop == 1:
 										# Append CDP data
