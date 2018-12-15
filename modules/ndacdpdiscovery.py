@@ -140,7 +140,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 	networkgraphdict = {}
 	cdpneistrip = ''
 	sshdomain = sshnet_connect.send_command(showdomain)
-	if sshdomain != '':
+	if sshdomain != '' and not 'not set' in sshdomain:
 		sshdomainadd = re.search('.*Default domain is (\S+).*',sshdomain).group(1)
 		cdpneiname = sshdevicehostname + '.' + sshdomainadd
 	else:
@@ -227,7 +227,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 							networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
 							networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
 							networkgraphdict_neighbors['device'] = cdpnei[2]
-							networkgraphdict_neighbors['ip'] = cdpnei[1]
+							networkgraphdict_neighbors['ip'] = cdpneiip
 							networkgraphlist_neighbors.append(networkgraphdict_neighbors)
 							continue
 						else:
@@ -241,7 +241,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 							networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
 							networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
 							networkgraphdict_neighbors['device'] = cdpnei[2]
-							networkgraphdict_neighbors['ip'] = cdpnei[1]
+							networkgraphdict_neighbors['ip'] = cdpneiip
 							networkgraphlist_neighbors.append(networkgraphdict_neighbors)
 							continue
 						else:
@@ -269,7 +269,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 							networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
 							networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
 							networkgraphdict_neighbors['device'] = cdpnei[2]
-							networkgraphdict_neighbors['ip'] = cdpnei[1]
+							networkgraphdict_neighbors['ip'] = cdpneiip
 							networkgraphlist_neighbors.append(networkgraphdict_neighbors)
 							continue
 					if reachable == 1:
@@ -303,7 +303,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 							networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
 							networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
 							networkgraphdict_neighbors['device'] = cdpnei[2]
-							networkgraphdict_neighbors['ip'] = cdpnei[1]
+							networkgraphdict_neighbors['ip'] = cdpneiip
 							networkgraphlist_neighbors.append(networkgraphdict_neighbors)
 		except IndexError:
 			print 'Could not connect to device ' + cdpneiip
@@ -425,7 +425,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 					networkgraphdict = {}
 					cdpneistrip = ''
 					sshdomain = sshnet_connect.send_command(showdomain)
-					if sshdomain != '':
+					if sshdomain != '' and not 'not set' in sshdomain:
 						sshdomainadd = re.search('.*Default domain is (\S+).*',sshdomain).group(1)
 						cdpneiname = sshdevicehostname + '.' + sshdomainadd
 					else:
@@ -510,7 +510,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 										networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
 										networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
 										networkgraphdict_neighbors['device'] = cdpnei[2]
-										networkgraphdict_neighbors['ip'] = cdpnei[1]
+										networkgraphdict_neighbors['ip'] = cdpneiip
 										networkgraphlist_neighbors.append(networkgraphdict_neighbors)
 										continue
 									else:
@@ -524,7 +524,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 										networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
 										networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
 										networkgraphdict_neighbors['device'] = cdpnei[2]
-										networkgraphdict_neighbors['ip'] = cdpnei[1]
+										networkgraphdict_neighbors['ip'] = cdpneiip
 										networkgraphlist_neighbors.append(networkgraphdict_neighbors)
 										continue
 									else:
@@ -552,7 +552,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 										networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
 										networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
 										networkgraphdict_neighbors['device'] = cdpnei[2]
-										networkgraphdict_neighbors['ip'] = cdpnei[1]
+										networkgraphdict_neighbors['ip'] = cdpneiip
 										networkgraphlist_neighbors.append(networkgraphdict_neighbors)
 										continue
 								if reachable == 1:
@@ -585,7 +585,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 										networkgraphdict_neighbors['sourceinterface'] = cdpnei[4]
 										networkgraphdict_neighbors['destinationinterface'] = cdpnei[3]
 										networkgraphdict_neighbors['device'] = cdpnei[2]
-										networkgraphdict_neighbors['ip'] = cdpnei[1]
+										networkgraphdict_neighbors['ip'] = cdpneiip
 										networkgraphlist_neighbors.append(networkgraphdict_neighbors)
 					# Add Network Graph Dict to master list
 					networkgraphdict['neighbors'] = networkgraphlist_neighbors
