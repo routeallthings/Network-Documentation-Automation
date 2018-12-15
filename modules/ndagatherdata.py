@@ -306,6 +306,7 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 				# Get Product Name, Product Serial Number, Description and Stack
 				inv_pid = subrow[2]
 				inv_sn = subrow[4]
+				inv_name = subrow[0]
 				if re.match('^[1-8]$',subrow[0]) or re.match('^Switch [1-8]$',subrow[0]):
 					inv_stack = subrow[0]
 					inv_desc = 'Switch chassis'
@@ -323,6 +324,7 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 				tempdict = {}
 				# Append Data to Temp Dictionary
 				tempdict['Hostname'] = sshdevicehostname
+				tempdict['Name'] = inv_name
 				tempdict['Product ID'] = inv_pid
 				tempdict['Serial Number'] = inv_sn
 				tempdict['Description'] = inv_desc
@@ -337,6 +339,7 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 				inv_pid = subrow[2]
 				inv_sn = subrow[4]
 				inv_desc = subrow[1]
+				inv_name = subrow[0]
 				inv_ver = ''
 				# Get Version number from already created list
 				for subrow1 in tempversioninfo:
@@ -346,6 +349,7 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 				tempdict = {}
 				# Append Data to Temp Dictionary
 				tempdict['Hostname'] = sshdevicehostname
+				tempdict['Name'] = inv_name
 				tempdict['Product ID'] = inv_pid
 				tempdict['Serial Number'] = inv_sn
 				tempdict['Description'] = inv_desc
@@ -366,6 +370,7 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 				inv_pid = subrow[2]
 				inv_sn = subrow[3]
 				inv_desc = subrow[1]
+				inv_name = subrow[0]
 				inv_ver = ''
 				# Get Version number from already created list
 				for subrow1 in tempversioninfo:
@@ -375,6 +380,7 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 				tempdict = {}
 				# Append Data to Temp Dictionary
 				tempdict['Hostname'] = sshdevicehostname
+				tempdict['Name'] = inv_name
 				tempdict['Product ID'] = inv_pid
 				tempdict['Serial Number'] = inv_sn
 				tempdict['Description'] = inv_desc
