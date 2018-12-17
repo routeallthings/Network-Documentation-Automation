@@ -536,6 +536,11 @@ except Exception as e:
 	print 'Error with exporting network topology. Error is ' + str(e)
 # Report Outputs
 if fullinventoryreportv == 1 and fullinventorylist != []:
+	print 'Exporting Network Summary Report'
+	networksummaryreport(fullinventorylist,poeinterfacelist,exportlocation)
+else:
+	print 'No data retrieved from the network. Skipping Network Summary Report.'
+if fullinventoryreportv == 1 and fullinventorylist != []:
 	print 'Exporting Full Inventory Report'
 	fullinventoryreport(fullinventorylist,exportlocation)
 else:

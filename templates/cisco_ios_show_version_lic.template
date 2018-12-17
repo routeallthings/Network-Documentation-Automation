@@ -1,0 +1,11 @@
+Value LICENSE (\S+)
+Value TYPE (\S+)
+Value RUNNING_IMAGE (\S+)
+
+Start
+  ^License Level: ${LICENSE} -> Continue
+  ^License Type: ${TYPE} -> Record
+  ^${LICENSE}\s+\S+\s+Permanent.* -> Record
+  ^${LICENSE}\s+Permanent.* -> Record
+  ^${LICENSE}\s+Subscription.* -> Record
+  ^[sS]ystem\s+image\s+file\s+is\s+"(.*?):${RUNNING_IMAGE}"

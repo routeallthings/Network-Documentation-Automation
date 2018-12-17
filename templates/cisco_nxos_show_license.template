@@ -1,0 +1,5 @@
+Value LICENSE (\S+)
+Value TYPE (\S+)
+
+Start
+  ^INCREMENT $(LICENSE)\s+\S+\s+\S+\s+$(TYPE).* -> Record

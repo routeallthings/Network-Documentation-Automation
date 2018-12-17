@@ -10,6 +10,7 @@
 import os
 import re
 from decimal import *
+import datetime
 
 # Import NDA
 from downloadfile import *
@@ -80,7 +81,139 @@ HeaderFont = Font(bold=True)
 HeaderFont.size = 12
 HeaderStyle = NamedStyle(name='BoldHeader')
 HeaderStyle.font = HeaderFont
-	
+
+### Network Summary ###
+def networksummaryreport(fullinventorylist,poeinterfacelist,exportlocation):
+	# Create combined data list
+	combineddatalist = []
+	for row in fullinventorylist:
+		if row.get('Description').lower().endswith('chassis') == True or 'k9' in row.get('Description').lower():
+			## Full Inventory List ##
+			age_manufactured = ''
+			combineddatadict = {}
+			combineddatadict['Hostname'] = row.get('Hostname')
+			combineddatadict['Product ID'] = row.get('Product ID')
+			combineddatadict['Serial Number'] = row.get('Serial Number')
+			combineddatadict['Stack Number'] = row.get('Stack Number')
+			combineddatadict['Version'] = row.get('Version')
+			combineddatadict['License'] = row.get('License')
+			combineddatadict['Description'] = row.get('Description')
+			# Attempt to find the age of the device
+			try:
+				age_base = 1996
+				age_year = int(row.get('Serial Number')[3:5])
+				age_week = (row.get('Serial Number')[5:7])
+				age_year_manufactured = age_base + age_year
+				age_manufactured = datetime.datetime.strptime(str(age_year_manufactured) + '-W' + age_week.encode('utf-8') + '-0', '%Y-W%W-%w')
+				age_manufactured = '{:%B %d, %Y}'.format(age_manufactured)
+			except:
+				age_manufactured = ''
+			combineddatadict['Manufacture Date'] = age_manufactured
+			# Count number of PS in inventory
+			hostinv = filter(lambda x: x['Hostname'] == row.get('Hostname'), fullinventorylist)
+			pscount = 0
+			for psrow in hostinv:
+				if 'Power Supply' in psrow:
+					pscount = pscount + 1
+			if pscount == 0:
+				pscount = 1
+			combineddatadict['PS Count'] = pscount
+			## POE Interface List ##
+			poeinv = filter(lambda x: x['Hostname'] == row.get('Hostname'), poeinterfacelist)
+			poeusage = 0.0
+			if poeinv != []:
+				for poerow in poeinv:
+					powerusage = poerow.get('Power Usage')
+					poeusage = poeusage + float(powerusage)
+				combineddatadict['POE Used'] = poeusage
+			else:
+				combineddatadict['POE Used'] = 0
+			## Count the number of optics ##
+			opticcount = 0
+			opttypelist = ['SR','LR','ER','ZR','LRM','GE T','GLC-T','SFP','sfp','X2','x2']
+			for opt in hostinv:
+				optname = opt.get('Description')
+				if 'sfp' in optname.lower():
+					opticcount = opticcount + 1
+				if any(ext in optname for ext in opttypelist):
+					opticcount = opticcount + 1
+			combineddatadict['Optic Count'] = opticcount
+			## Get optic type if optic count is 1
+			if opticcount == 1:
+				for opt in hostinv:
+					optname = opt.get('Description')
+					if 'sfp' in optname.lower():
+						optictype = optname
+					if any(ext in optname for ext in opttypelist):
+						optictype = optname
+			if opticcount > 1:
+				optictype = 'Multiple'
+			if opticcount == 0:
+				optictype = 'None'
+			combineddatadict['Optic Type'] = optictype
+			# End of report, add to list
+			combineddatalist.append(combineddatadict)
+	# Start Report
+	wb = Workbook()
+	dest_filename = 'Network-Summary.xlsx'
+	dest_path = exportlocation + '\\' + dest_filename
+	ws1 = wb.active
+	ws1.title = "Network Summary"
+	ws1.append(['Hostname','Product ID','Serial Number','Stack Number','POE Used','PS Count','Optic Count','Optic Type','License','Manufacture Date','Version','Description'])
+	# Continue on with work
+	startrow = 2
+	for row in combineddatalist:
+		# Add to workbook
+		ws1['A' + str(startrow)] = row.get('Hostname')
+		ws1['B' + str(startrow)] = row.get('Product ID')
+		ws1['C' + str(startrow)] = row.get('Serial Number')
+		ws1['D' + str(startrow)] = row.get('Stack Number')
+		ws1['E' + str(startrow)] = row.get('POE Used')
+		ws1['F' + str(startrow)] = row.get('PS Count')
+		ws1['G' + str(startrow)] = row.get('Optic Count')
+		ws1['H' + str(startrow)] = row.get('Optic Type')
+		ws1['I' + str(startrow)] = row.get('License')
+		ws1['J' + str(startrow)] = row.get('Manufacture Date')
+		ws1['K' + str(startrow)] = row.get('Version')
+		ws1['L' + str(startrow)] = row.get('Description')
+		startrow = startrow + 1
+	wb.add_named_style(HeaderStyle)
+	# Set styles on header row
+	for cell in ws1["1:1"]:
+		cell.style = 'BoldHeader'
+	# Set Column Width
+	for col in ws1.columns:
+		max_length = 0
+		column = col[0].column # Get the column name
+		for cell in col:
+			try: # Necessary to avoid error on empty cells
+				if len(str(cell.value)) > max_length:
+					max_length = len(cell.value)
+			except:
+				pass
+		adjusted_width = (max_length + 2) * 1.2
+		ws1.column_dimensions[column].width = adjusted_width
+	# Save File
+	try:
+		wb.save(filename = dest_path)
+	except:
+		print 'Error creating the report: ' + dest_path + '. File might be currently in use.'
+		return
+	# Sorting
+	try:
+		# Tab 1
+		excel = win32com.client.Dispatch("Excel.Application")
+		wb = excel.Workbooks.Open(dest_path)
+		ws = wb.Worksheets('Device Inventory')
+		ws.Range('A2:M50000').Sort(Key1=ws.Range('A1'), Order1=1, Orientation=1)
+		ws.Range('A1:M1').AutoFilter(1)
+		wb.Save()
+		excel.Application.Quit()
+	except:
+		# Throw no error
+		pass
+	print 'Successfully created Network Summary Report'
+
 ### Full Inventory ###
 def fullinventoryreport(fullinventorylist,exportlocation):
 	# Start Report

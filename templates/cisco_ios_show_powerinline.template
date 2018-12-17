@@ -7,4 +7,4 @@ Value Required CLASS (1|2|3|4|5|n/a)
 Value Required MAXPOE (\d+.\d+)
 
 Start
-  ^${INT}\s+${ADMIN}\s+${OPER}\s+${POW}\s+${DEVICE}\s+${CLASS}\s+${MAXPOE} -> Record
+  ^${INT}\s+${ADMIN}\s+${OPER}\s+${POW}\s+${DEVICE}.*${CLASS}\s+${MAXPOE} -> Record

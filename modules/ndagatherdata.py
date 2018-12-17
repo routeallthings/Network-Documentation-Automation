@@ -148,6 +148,18 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 		# Open and store in memory
 		with open(templatefile, 'r') as fsmtemplatenamefile:
 			fsmmactemplate = textfsm.TextFSM(fsmtemplatenamefile)
+		# Show Version/License
+		if "cisco_ios" in sshdevicetype.lower():
+			templatename = "cisco_ios_show_version_lic.template"
+		if "cisco_xe" in sshdevicetype.lower():
+			templatename = "cisco_ios_show_version_lic.template"
+		if "cisco_nxos" in sshdevicetype.lower():
+			templatename = "cisco_nxos_show_license.template"
+		# Create template file path
+		templatefile = os.path.join(templatepath,templatename)
+		# Open and store in memory
+		with open(templatefile, 'r') as fsmtemplatenamefile:
+			fsmlictemplate = textfsm.TextFSM(fsmtemplatenamefile)
 		# Show Version
 		if "cisco_ios" in sshdevicetype.lower():
 			templatename = "cisco_ios_show_version.template"
@@ -235,10 +247,53 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 		if not 'invalid' in sshresult:
 			writeoutput (sshcommand,sshresult,sshdevicehostname,outputfolder)	
 		######################## Show License #########################
-		sshcommand = showlicense
+		if 'cisco_ios' in sshdevicetype.lower() or 'cisco_xe' in sshdevicetype.lower():
+			sshcommand = showver
+		if 'cisco_nxos' in sshdevicetype.lower():
+			sshcommand = showlic
 		sshresult = sshnet_connect.send_command(sshcommand)
-		if not 'invalid' in sshresult:
-			writeoutput (sshcommand,sshresult,sshdevicehostname,outputfolder)				
+		# Create temporary license information DB
+		data = fsmlictemplate.ParseText(sshresult)
+		templicenseinfo = []
+		foundlicense = 0
+		if 'cisco_ios' in sshdevicetype.lower() or 'cisco_xe' in sshdevicetype.lower():
+			for subrow in data:
+				if subrow[0] != '':
+					templicenseinfo.append(subrow[0])
+					foundlicense = 1
+				if subrow[2] != '':
+					imagepath = subrow[2]
+			if foundlicense == 0:
+				# Classic switch licenses
+				if 'lanlite' in imagepath.lower():
+					templicenseinfo.append('lanlite')
+				if 'lanbase' in imagepath.lower():
+					templicenseinfo.append('lanbase')
+				if 'ipbase' in imagepath.lower():
+					templicenseinfo.append('ipbase')
+				if 'ipservices' in imagepath.lower():
+					templicenseinfo.append('ipservices')
+				# Classic router licenses
+				if 'ipvoice' in imagepath.lower():
+					templicenseinfo.append('ipvoice')
+				if 'advipservices' in imagepath.lower():
+					templicenseinfo.append('advipservices')
+				if 'spservices' in imagepath.lower():
+					templicenseinfo.append('spservices')
+				if 'advsecurity' in imagepath.lower():
+					templicenseinfo.append('advsecurity')
+				if 'entservices' in imagepath.lower():
+					templicenseinfo.append('entservices')
+				if 'entbase' in imagepath.lower():
+					templicenseinfo.append('entbase')
+				if 'entservices' in imagepath.lower():
+					templicenseinfo.append('entservices')
+				if 'adventerprise' in imagepath.lower():
+					templicenseinfo.append('adventerprise')
+		if 'cisco_nxos' in sshdevicetype.lower():
+			for subrow in data:
+				if subrow[0] != '':
+					templicenseinfo.append(subrow[0])
 		######################## Show Version #########################
 		sshcommand = showver
 		sshresult = sshnet_connect.send_command(sshcommand)
@@ -306,10 +361,16 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 				# Get Product Name, Product Serial Number, Description and Stack
 				inv_pid = subrow[2]
 				inv_sn = subrow[4]
-				inv_name = subrow[0]
 				if re.match('^[1-8]$',subrow[0]) or re.match('^Switch [1-8]$',subrow[0]):
-					inv_stack = subrow[0]
-					inv_desc = 'Switch chassis'
+					if re.match('^Switch [1-8]$',subrow[0]):
+						try:
+							inv_stack = re.search('^Switch ([1-8])$',subrow[0]).group(1)
+						except:
+							inv_stack = subrow[0]
+						inv_desc = 'Switch chassis'
+					else:
+						inv_stack = subrow[0]
+						inv_desc = 'Switch chassis'
 				else:
 					inv_stack = ''
 					inv_desc = subrow[0]
@@ -320,16 +381,19 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 				for subrow1 in tempversioninfo:
 					if sshdevicehostname == subrow1.get('Hostname'):
 						inv_ver = subrow1.get('Version')
+						break
+				# Get License number from already created list
+				inv_license = ','.join(templicenseinfo)
 				# Create Temp Dictionary
 				tempdict = {}
 				# Append Data to Temp Dictionary
 				tempdict['Hostname'] = sshdevicehostname
-				tempdict['Name'] = inv_name
 				tempdict['Product ID'] = inv_pid
 				tempdict['Serial Number'] = inv_sn
 				tempdict['Description'] = inv_desc
 				tempdict['Stack Number'] = inv_stack
 				tempdict['Version'] = inv_ver
+				tempdict['License'] = inv_license
 				tempdict['Location'] = inv_location
 				# Append Temp Dictionary to Global List
 				fullinventorylist.append(tempdict)
@@ -339,22 +403,24 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 				inv_pid = subrow[2]
 				inv_sn = subrow[4]
 				inv_desc = subrow[1]
-				inv_name = subrow[0]
 				inv_ver = ''
 				# Get Version number from already created list
 				for subrow1 in tempversioninfo:
 					if sshdevicehostname == subrow1.get('Hostname'):
 						inv_ver = subrow1.get('Version')
+						break
+				# Get Version number from already created list
+				inv_license = ','.join(templicenseinfo)
 				# Create Temp Dictionary
 				tempdict = {}
 				# Append Data to Temp Dictionary
 				tempdict['Hostname'] = sshdevicehostname
-				tempdict['Name'] = inv_name
 				tempdict['Product ID'] = inv_pid
 				tempdict['Serial Number'] = inv_sn
 				tempdict['Description'] = inv_desc
 				tempdict['Stack Number'] = ''
 				tempdict['Version'] = inv_ver
+				tempdict['License'] = inv_license
 				tempdict['Location'] = inv_location
 				# Append Temp Dictionary to Global List
 				fullinventorylist.append(tempdict)
@@ -370,17 +436,16 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 				inv_pid = subrow[2]
 				inv_sn = subrow[3]
 				inv_desc = subrow[1]
-				inv_name = subrow[0]
 				inv_ver = ''
 				# Get Version number from already created list
 				for subrow1 in tempversioninfo:
 					if sshdevicehostname == subrow1.get('Hostname'):
 						inv_ver = subrow1.get('Version')
+						break
 				# Create Temp Dictionary
 				tempdict = {}
 				# Append Data to Temp Dictionary
 				tempdict['Hostname'] = sshdevicehostname
-				tempdict['Name'] = inv_name
 				tempdict['Product ID'] = inv_pid
 				tempdict['Serial Number'] = inv_sn
 				tempdict['Description'] = inv_desc
