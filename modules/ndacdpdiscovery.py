@@ -131,7 +131,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 	# Adding Seed Router to reports
 	seedroutertype = re.search('(\S+)_(\S+)',sshdevicetype)
 	cdpdevicedict = {}
-	cdpdevicedict['Depth'] = 1
+	cdpdevicedict['Hostname'] = sshdevicehostname
 	cdpdevicedict['Device IPs'] = sshdeviceip
 	cdpdevicedict['Vendor'] = seedroutertype.group(1)
 	cdpdevicedict['Type'] = seedroutertype.group(2)
@@ -416,6 +416,7 @@ def cdpdiscovery(usernamelist,cdpseedv,cdpdevicetypev,cdpdiscoverydepthv,include
 					print 'CDP discovery starting on secondary device ' + sshdevicehostname + ' (' + sshdeviceip + ')'
 					# Adding to master list
 					cdpdevicedict = {}
+					cdpdevicedict['Hostname'] = sshdevicehostname
 					cdpdevicedict['Device IPs'] = sshdeviceip
 					cdpdevicedict['Vendor'] = cdpvendor
 					cdpdevicedict['Type'] = cdptype

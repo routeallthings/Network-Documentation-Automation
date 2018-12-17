@@ -255,6 +255,7 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 		# Create temporary license information DB
 		data = fsmlictemplate.ParseText(sshresult)
 		templicenseinfo = []
+		imagepath = ''
 		foundlicense = 0
 		if 'cisco_ios' in sshdevicetype.lower() or 'cisco_xe' in sshdevicetype.lower():
 			for subrow in data:
@@ -361,6 +362,7 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 				# Get Product Name, Product Serial Number, Description and Stack
 				inv_pid = subrow[2]
 				inv_sn = subrow[4]
+				inv_name = subrow[0]
 				if re.match('^[1-8]$',subrow[0]) or re.match('^Switch [1-8]$',subrow[0]):
 					if re.match('^Switch [1-8]$',subrow[0]):
 						try:
@@ -395,6 +397,7 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 				tempdict['Version'] = inv_ver
 				tempdict['License'] = inv_license
 				tempdict['Location'] = inv_location
+				tempdict['Name'] = inv_name
 				# Append Temp Dictionary to Global List
 				fullinventorylist.append(tempdict)
 		if 'cisco_nxos' in sshdevicetype.lower():
@@ -403,6 +406,7 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 				inv_pid = subrow[2]
 				inv_sn = subrow[4]
 				inv_desc = subrow[1]
+				inv_name = subrow[0]
 				inv_ver = ''
 				# Get Version number from already created list
 				for subrow1 in tempversioninfo:
@@ -422,6 +426,7 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 				tempdict['Version'] = inv_ver
 				tempdict['License'] = inv_license
 				tempdict['Location'] = inv_location
+				tempdict['Name'] = inv_name
 				# Append Temp Dictionary to Global List
 				fullinventorylist.append(tempdict)
 			# Get transciever info
@@ -436,6 +441,7 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 				inv_pid = subrow[2]
 				inv_sn = subrow[3]
 				inv_desc = subrow[1]
+				inv_name = subrow[0]
 				inv_ver = ''
 				# Get Version number from already created list
 				for subrow1 in tempversioninfo:
@@ -452,6 +458,7 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 				tempdict['Stack Number'] = ''
 				tempdict['Version'] = inv_ver
 				tempdict['Location'] = inv_location
+				tempdict['Name'] = inv_name
 				# Append Temp Dictionary to Global List
 				fullinventorylist.append(tempdict)
 		#################################################################

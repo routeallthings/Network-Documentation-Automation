@@ -508,6 +508,7 @@ if __name__ == "__main__":
 			runningthreads = False
 		time.sleep(1)
 		second = second + 1
+	time.sleep(10)
 # Print CLI Output for Report Section
 print '###################################################'
 print 'Completed information gathering, starting reports'

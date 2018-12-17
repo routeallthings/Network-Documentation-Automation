@@ -112,31 +112,69 @@ def networksummaryreport(fullinventorylist,poeinterfacelist,exportlocation):
 			# Count number of PS in inventory
 			hostinv = filter(lambda x: x['Hostname'] == row.get('Hostname'), fullinventorylist)
 			pscount = 0
+			psstack = row.get('Stack Number')
+			psstackreg = re.compile('Switch ' + str(psstack) + '.*Power Supply.*')
 			for psrow in hostinv:
-				if 'Power Supply' in psrow:
-					pscount = pscount + 1
+				psdesc = psrow.get('Description')
+				if psstack != '':
+					# Switch stacks
+					if re.match(psstackreg,psdesc):
+						pscount = pscount + 1
+				else:
+					# Nexus Power Supply inventory
+					if row.get('Description').endswith('chassis') and psdesc.endswith('chassis Power Supply'):
+						pscount = pscount + 1
+					# Nexus Fabric Extenders
+					if 'N2K' in row.get('Description') and 'Fabric Extender AC power supply' in psdesc:
+						pscount = pscount + 1
+					# Single Switches
+					if row.get('Description').startswith('Switch chassis') and 'Power Supply' in psdesc:
+						pscount = pscount + 1
+					# IOS-XE Routers
+					if row.get('Description').startswith('Chassis') and psdesc.startswith('Power Supply'):
+						pscount = pscount + 1
 			if pscount == 0:
 				pscount = 1
 			combineddatadict['PS Count'] = pscount
 			## POE Interface List ##
 			poeinv = filter(lambda x: x['Hostname'] == row.get('Hostname'), poeinterfacelist)
 			poeusage = 0.0
+			poestack = row.get('Stack Number')
 			if poeinv != []:
 				for poerow in poeinv:
-					powerusage = poerow.get('Power Usage')
-					poeusage = poeusage + float(powerusage)
+					poeint = poerow.get('Interface')
+					if optstack != '':
+						poereg = re.compile('\S+' + str(poestack) + '\/\d\/\d')
+						if re.match(poereg,poeint):
+							powerusage = poerow.get('Power Usage')
+							poeusage = poeusage + float(powerusage)
+					else:
+						powerusage = poerow.get('Power Usage')
+						poeusage = poeusage + float(powerusage)
 				combineddatadict['POE Used'] = poeusage
 			else:
 				combineddatadict['POE Used'] = 0
-			## Count the number of optics ##
+			## Count the number of optics on the switch ##
 			opticcount = 0
+			optstack = row.get('Stack Number')
 			opttypelist = ['SR','LR','ER','ZR','LRM','GE T','GLC-T','SFP','sfp','X2','x2']
 			for opt in hostinv:
 				optname = opt.get('Description')
-				if 'sfp' in optname.lower():
-					opticcount = opticcount + 1
-				if any(ext in optname for ext in opttypelist):
-					opticcount = opticcount + 1
+				optint = opt.get('Name')
+				if optstack != '':
+					optreg = re.compile('\S+' + str(optstack) + '\/\d\/\d')
+					if 'sfp' in optname.lower() and re.match(optreg,optint):
+						opticcount = opticcount + 1
+					if any(ext in optname for ext in opttypelist) and re.match(optreg,optint):
+						opticcount = opticcount + 1
+				else:
+					if 'sfp' in optname.lower():
+						opticcount = opticcount + 1
+					if any(ext in optname for ext in opttypelist):
+						opticcount = opticcount + 1
+			# Reset fabric extender count as not valid, might add this in later if the need shows up
+			if row.get('Description').startswith('Fabric Extender'):
+				opticcount = 'See Chassis'
 			combineddatadict['Optic Count'] = opticcount
 			## Get optic type if optic count is 1
 			if opticcount == 1:
