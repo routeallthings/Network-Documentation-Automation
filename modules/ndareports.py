@@ -122,16 +122,16 @@ def networksummaryreport(fullinventorylist,poeinterfacelist,exportlocation):
 						pscount = pscount + 1
 				else:
 					# Nexus Power Supply inventory
-					if row.get('Description').endswith('chassis') and psdesc.endswith('chassis Power Supply'):
+					if row.get('Description').endswith('chassis') == True and psdesc.endswith('chassis Power Supply') == True:
 						pscount = pscount + 1
 					# Nexus Fabric Extenders
 					if 'N2K' in row.get('Description') and 'Fabric Extender AC power supply' in psdesc:
 						pscount = pscount + 1
 					# Single Switches
-					if row.get('Description').startswith('Switch chassis') and 'Power Supply' in psdesc:
+					if row.get('Description').startswith('Switch chassis') == True and 'Power Supply' in psdesc:
 						pscount = pscount + 1
 					# IOS-XE Routers
-					if row.get('Description').startswith('Chassis') and psdesc.startswith('Power Supply'):
+					if row.get('Description').startswith('Chassis') == True and psdesc.startswith('Power Supply') == True:
 						pscount = pscount + 1
 			if pscount == 0:
 				pscount = 1
@@ -173,7 +173,7 @@ def networksummaryreport(fullinventorylist,poeinterfacelist,exportlocation):
 					if any(ext in optname for ext in opttypelist):
 						opticcount = opticcount + 1
 			# Reset fabric extender count as not valid, might add this in later if the need shows up
-			if row.get('Description').startswith('Fabric Extender'):
+			if 'N2K' in row.get('Product ID'):
 				opticcount = 'See Chassis'
 			combineddatadict['Optic Count'] = opticcount
 			## Get optic type if optic count is 1

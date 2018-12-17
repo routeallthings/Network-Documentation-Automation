@@ -148,6 +148,18 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 		# Open and store in memory
 		with open(templatefile, 'r') as fsmtemplatenamefile:
 			fsmmactemplate = textfsm.TextFSM(fsmtemplatenamefile)
+		# Show License
+		if "cisco_ios" in sshdevicetype.lower():
+			templatename = "cisco_ios_show_license.template"
+		if "cisco_xe" in sshdevicetype.lower():
+			templatename = "cisco_ios_show_license.template"
+		if "cisco_nxos" in sshdevicetype.lower():
+			templatename = "cisco_nxos_show_license.template"
+		# Create template file path
+		templatefile = os.path.join(templatepath,templatename)
+		# Open and store in memory
+		with open(templatefile, 'r') as fsmtemplatenamefile:
+			fsmlictemplate = textfsm.TextFSM(fsmtemplatenamefile)
 		# Show Version/License
 		if "cisco_ios" in sshdevicetype.lower():
 			templatename = "cisco_ios_show_version_lic.template"
@@ -159,7 +171,7 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 		templatefile = os.path.join(templatepath,templatename)
 		# Open and store in memory
 		with open(templatefile, 'r') as fsmtemplatenamefile:
-			fsmlictemplate = textfsm.TextFSM(fsmtemplatenamefile)
+			fsmverlictemplate = textfsm.TextFSM(fsmtemplatenamefile)
 		# Show Version
 		if "cisco_ios" in sshdevicetype.lower():
 			templatename = "cisco_ios_show_version.template"
@@ -253,11 +265,11 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 			sshcommand = showlic
 		sshresult = sshnet_connect.send_command(sshcommand)
 		# Create temporary license information DB
-		data = fsmlictemplate.ParseText(sshresult)
 		templicenseinfo = []
 		imagepath = ''
 		foundlicense = 0
 		if 'cisco_ios' in sshdevicetype.lower() or 'cisco_xe' in sshdevicetype.lower():
+			data = fsmverlictemplate.ParseText(sshresult)
 			for subrow in data:
 				if subrow[0] != '':
 					templicenseinfo.append(subrow[0])
@@ -268,30 +280,51 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 				# Classic switch licenses
 				if 'lanlite' in imagepath.lower():
 					templicenseinfo.append('lanlite')
+					foundlicense = 1
 				if 'lanbase' in imagepath.lower():
 					templicenseinfo.append('lanbase')
+					foundlicense = 1
 				if 'ipbase' in imagepath.lower():
 					templicenseinfo.append('ipbase')
+					foundlicense = 1
 				if 'ipservices' in imagepath.lower():
 					templicenseinfo.append('ipservices')
+					foundlicense = 1
 				# Classic router licenses
 				if 'ipvoice' in imagepath.lower():
 					templicenseinfo.append('ipvoice')
+					foundlicense = 1
 				if 'advipservices' in imagepath.lower():
 					templicenseinfo.append('advipservices')
+					foundlicense = 1
 				if 'spservices' in imagepath.lower():
 					templicenseinfo.append('spservices')
+					foundlicense = 1
 				if 'advsecurity' in imagepath.lower():
 					templicenseinfo.append('advsecurity')
+					foundlicense = 1
 				if 'entservices' in imagepath.lower():
 					templicenseinfo.append('entservices')
+					foundlicense = 1
 				if 'entbase' in imagepath.lower():
 					templicenseinfo.append('entbase')
+					foundlicense = 1
 				if 'entservices' in imagepath.lower():
 					templicenseinfo.append('entservices')
+					foundlicense = 1
 				if 'adventerprise' in imagepath.lower():
 					templicenseinfo.append('adventerprise')
+					foundlicense = 1
+			if foundlicense == 0:
+				# New licensing, only visible via show license
+				sshcommand = showlic
+				sshresult = sshnet_connect.send_command(sshcommand)
+				data = fsmlictemplate.ParseText(sshresult)
+				for subrow in data:
+					if subrow[0] != '':
+						templicenseinfo.append(subrow[0])
 		if 'cisco_nxos' in sshdevicetype.lower():
+			data = fsmlictemplate.ParseText(sshresult)
 			for subrow in data:
 				if subrow[0] != '':
 					templicenseinfo.append(subrow[0])

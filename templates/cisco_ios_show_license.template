@@ -1,0 +1,14 @@
+Value LICENSE (\S+)
+Value PERIOD (.*)
+Value TYPE (\S+)
+Value STATE (.*)
+Value PRIORITY (\S+)
+Value COUNT (\S+)
+
+Start
+  ^Index \d+ Feature: ${LICENSE}
+  ^.*Period left: ${PERIOD}
+  ^.*License Type: ${TYPE}
+  ^.*License State: ${STATE}
+  ^.*License Priority: ${PRIORITY}
+  ^.*License Count: ${COUNT}
