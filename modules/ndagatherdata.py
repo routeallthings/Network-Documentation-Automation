@@ -393,7 +393,9 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 		if 'cisco_ios' in sshdevicetype.lower() or 'cisco_xe' in sshdevicetype.lower():
 			for subrow in data:
 				# Get Product Name, Product Serial Number, Description and Stack
+				opttypelist = ['-SR','-LR','-ER','-ZR','-LRM','GE T','1000base','GLC-','SFP-','sfp','X2-','x2']
 				inv_pid = subrow[2]
+				inv_desc = subrow[1]
 				inv_sn = subrow[4]
 				inv_name = subrow[0]
 				if re.match('^[1-8]$',subrow[0]) or re.match('^Switch [1-8]$',subrow[0]):
@@ -407,10 +409,15 @@ def gatherdata(sshdevice,usernamelist,exportlocation):
 						inv_stack = subrow[0]
 						inv_desc = 'Switch chassis'
 				else:
-					inv_stack = ''
-					inv_desc = subrow[0]
-				if re.match('^GLC|SFP.*',inv_pid):
-					inv_desc = subrow[1]
+					if any(ext in subrow[1] for ext in opttypelist):
+						inv_stack = ''
+						inv_desc = subrow[1]
+					elif any(ext in subrow[0] for ext in opttypelist):
+						inv_stack = ''
+						inv_desc = subrow[0]
+					else:
+						inv_stack = ''
+						inv_desc = subrow[0]
 				# Get Version number from already created list
 				inv_ver = ''
 				for subrow1 in tempversioninfo:

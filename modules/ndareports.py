@@ -155,39 +155,52 @@ def networksummaryreport(fullinventorylist,poeinterfacelist,exportlocation):
 			else:
 				combineddatadict['POE Used'] = 0
 			## Count the number of optics on the switch ##
+			opttypetemp = []
 			opticcount = 0
 			optstack = row.get('Stack Number')
-			opttypelist = ['SR','LR','ER','ZR','LRM','GE T','GLC-T','SFP','sfp','X2','x2']
+			opttypelist = ['-SR','-LR','-ER','-ZR','-LRM','GE T','1000base','GLC-','SFP-','sfp','X2-','x2']
 			for opt in hostinv:
 				optname = opt.get('Description')
 				optint = opt.get('Name')
 				if optstack != '':
 					optreg = re.compile('\S+' + str(optstack) + '\/\d\/\d')
-					if 'sfp' in optname.lower() and re.match(optreg,optint):
-						opticcount = opticcount + 1
 					if any(ext in optname for ext in opttypelist) and re.match(optreg,optint):
 						opticcount = opticcount + 1
+						opttypetemp.append(optname)
 				else:
-					if 'sfp' in optname.lower():
-						opticcount = opticcount + 1
 					if any(ext in optname for ext in opttypelist):
 						opticcount = opticcount + 1
+						opttypetemp.append(optname)
 			# Reset fabric extender count as not valid, might add this in later if the need shows up
 			if 'N2K' in row.get('Product ID'):
-				opticcount = 'See Chassis'
+				opticcount = ''
 			combineddatadict['Optic Count'] = opticcount
 			## Get optic type if optic count is 1
-			if opticcount == 1:
-				for opt in hostinv:
-					optname = opt.get('Description')
-					if 'sfp' in optname.lower():
-						optictype = optname
-					if any(ext in optname for ext in opttypelist):
-						optictype = optname
-			if opticcount > 1:
+			optictype = ''
+			if all(x == opttypetemp[0] for x in opttypetemp) and opttypetemp != []:
+				optdesc = opttypetemp[0]
+				# 10GB optics
+				if 'SR' in optdesc or 'LX4' in optdesc:
+					optictype = 'Multimode 10GB'
+				if 'LR' in optdesc or 'ER' in optdesc or 'ZR' in optdesc or 'BX' in optdesc:
+					optictype = 'Singlemode 10GB'
+				if 'LRM' in optdesc:
+					optictype = 'LRM 10GB'
+				if 'CU' in optdesc or 'AOC' in optdesc or 'CX4' in optdesc:
+					optictype = 'Direct Attach Copper 10GB'
+				# 1GB optics
+				if 'SX' in optdesc:
+					optictype = 'Multimode 1GB'
+				if 'LX' in optdesc or 'EX' in optdesc or 'ZX' in optdesc:
+					optictype = 'Singlemode 1GB'
+				if '-T' or 'GE' in optdesc:
+					optictype = 'Copper'
+				if optictype == '':
+					optictype = 'Unknown'
+			elif opticcount == 0:
+				optictype = 'Copper'
+			else:
 				optictype = 'Multiple'
-			if opticcount == 0:
-				optictype = 'None'
 			combineddatadict['Optic Type'] = optictype
 			# End of report, add to list
 			combineddatalist.append(combineddatadict)
