@@ -155,3 +155,45 @@ except ImportError:
 		print 'Exiting in 5 seconds'
 		time.sleep(5)
 		sys.exit()	
+
+# Graphviz
+try:
+	import graphviz
+except ImportError:
+	graphvizinstallstatus = raw_input ('Graphviz module is missing, would you like to automatically install? (Y/N): ')
+	if 'y' in graphvizinstallstatus.lower():
+		os.system('python -m pip install graphviz')
+		import graphviz
+	else:
+		print 'You selected an option other than yes. Please be aware that this script requires the use of Graphviz. Please install manually and retry'
+		print 'Exiting in 5 seconds'
+		time.sleep(5)
+		sys.exit()	
+		
+# Pydot
+try:
+	import pydot
+except ImportError:
+	pydotinstallstatus = raw_input ('Pydot module is missing, would you like to automatically install? (Y/N): ')
+	if 'y' in pydotinstallstatus.lower():
+		os.system('python -m pip install pydot')
+		import pydot
+	else:
+		print 'You selected an option other than yes. Please be aware that this script requires the use of Pydot. Please install manually and retry'
+		print 'Exiting in 5 seconds'
+		time.sleep(5)
+		sys.exit()	
+
+# Pysnmp
+try:
+	import pysnmp
+except ImportError:
+	pysnmpinstallstatus = raw_input ('Pysnmp module is missing, would you like to automatically install? (Y/N): ')
+	if 'y' in pysnmpinstallstatus.lower():
+		os.system('python -m pip install pysnmp')
+		import pysnmp
+	else:
+		print 'You selected an option other than yes. Please be aware that this script requires the use of Pysnmp. Please install manually and retry'
+		print 'Exiting in 5 seconds'
+		time.sleep(5)
+		sys.exit()	

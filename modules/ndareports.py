@@ -139,21 +139,45 @@ def networksummaryreport(fullinventorylist,poeinterfacelist,exportlocation):
 			## POE Interface List ##
 			poeinv = filter(lambda x: x['Hostname'] == row.get('Hostname'), poeinterfacelist)
 			poeusage = 0.0
+			apcount = 0
+			phonecount = 0
+			othercount = 0
 			poestack = row.get('Stack Number')
 			if poeinv != []:
 				for poerow in poeinv:
 					poeint = poerow.get('Interface')
+					poename = poerow.get('Device Name')
 					if optstack != '':
 						poereg = re.compile('\S+' + str(poestack) + '\/\d\/\d')
 						if re.match(poereg,poeint):
 							powerusage = poerow.get('Power Usage')
 							poeusage = poeusage + float(powerusage)
+							if float(powerusage) != 0.0:
+								if re.match('.*AIR.*', poename):
+									apcount = apcount + 1
+								elif re.match('.*PHONE|phone.*', poename):
+									phonecount = phonecount + 1
+								else:
+									othercount = othercount + 1
 					else:
 						powerusage = poerow.get('Power Usage')
 						poeusage = poeusage + float(powerusage)
+						if float(powerusage) != 0.0:
+							if re.match('.*AIR.*', poename):
+								apcount = apcount + 1
+							elif re.match('.*PHONE|phone.*', poename):
+								phonecount = phonecount + 1
+							else:
+								othercount = othercount + 1
+				combineddatadict['APs'] = apcount
+				combineddatadict['Phones'] = phonecount
+				combineddatadict['Other POE'] = othercount
 				combineddatadict['POE Used'] = poeusage
 			else:
 				combineddatadict['POE Used'] = 0
+				combineddatadict['APs'] = 0
+				combineddatadict['Phones'] = 0
+				combineddatadict['Other POE'] = 0
 			## Count the number of optics on the switch ##
 			opttypetemp = []
 			opticcount = 0
@@ -210,7 +234,7 @@ def networksummaryreport(fullinventorylist,poeinterfacelist,exportlocation):
 	dest_path = exportlocation + '\\' + dest_filename
 	ws1 = wb.active
 	ws1.title = "Network Summary"
-	ws1.append(['Hostname','Product ID','Serial Number','Stack Number','POE Used','PS Count','Optic Count','Optic Type','License','Manufacture Date','Version','Description'])
+	ws1.append(['Hostname','Product ID','Serial Number','Stack Number','POE Used','POE AP','POE Phone','POE Misc','PS Count','Optic Count','Optic Type','License','Manufacture Date','Version','Description'])
 	# Continue on with work
 	startrow = 2
 	for row in combineddatalist:
@@ -220,13 +244,16 @@ def networksummaryreport(fullinventorylist,poeinterfacelist,exportlocation):
 		ws1['C' + str(startrow)] = row.get('Serial Number')
 		ws1['D' + str(startrow)] = row.get('Stack Number')
 		ws1['E' + str(startrow)] = row.get('POE Used')
-		ws1['F' + str(startrow)] = row.get('PS Count')
-		ws1['G' + str(startrow)] = row.get('Optic Count')
-		ws1['H' + str(startrow)] = row.get('Optic Type')
-		ws1['I' + str(startrow)] = row.get('License')
-		ws1['J' + str(startrow)] = row.get('Manufacture Date')
-		ws1['K' + str(startrow)] = row.get('Version')
-		ws1['L' + str(startrow)] = row.get('Description')
+		ws1['F' + str(startrow)] = row.get('APs')
+		ws1['G' + str(startrow)] = row.get('Phones')
+		ws1['H' + str(startrow)] = row.get('Other POE')
+		ws1['I' + str(startrow)] = row.get('PS Count')
+		ws1['J' + str(startrow)] = row.get('Optic Count')
+		ws1['K' + str(startrow)] = row.get('Optic Type')
+		ws1['L' + str(startrow)] = row.get('License')
+		ws1['M' + str(startrow)] = row.get('Manufacture Date')
+		ws1['N' + str(startrow)] = row.get('Version')
+		ws1['O' + str(startrow)] = row.get('Description')
 		startrow = startrow + 1
 	wb.add_named_style(HeaderStyle)
 	# Set styles on header row

@@ -83,7 +83,10 @@ def networkgraph(topologyfile,topologyname, networkgraphlist, fullinventorylist,
 			# convert list of switches (if stacked) into a format for the label
 			devicemodel = '\n'.join(stackinv)
 		# Create device label
-		devicelabel = devicehostname + '\n' + devicemodel + '\n' + 'ip:' + deviceipaddress
+		try:
+			devicelabel = devicehostname + '\n' + devicemodel + '\n' + 'ip:' + deviceipaddress
+		except:
+			devicelabel = devicehostname + '\n' + 'ip:' + deviceipaddress
 		# Add node to graph	
 		node = pydot.Node(devicehostname, label=(devicelabel))
 		graph.add_node(node)
