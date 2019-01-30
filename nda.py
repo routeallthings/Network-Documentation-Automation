@@ -33,6 +33,8 @@ mnetsuitepath = os.path.join(externalpath,'mnetsuite')
 sys.path.append(mnetsuitepath)
 # add graphviz to system variables
 os.environ["PATH"] = os.environ["PATH"] + ";" + graphvizbinpath
+# add Python27
+os.environ["PATH"] = os.environ["PATH"] + ";" + 'C:\\Python27'
 
 # Import other required native objects
 
@@ -220,9 +222,9 @@ if devicediscoverymaptitlev == None:
 	devicediscoverymaptitlev = 'Network Topology'
 if devicediscoverymapv == 1:
 	import pydot
-	pydottest = pydot.find_graphviz()
+	pydottest = os.environ["PATH"]
 	try:
-		if not 'neato' in pydottest:
+		if not 'graphviz\\bin' in pydottest:
 			print 'Could not find graphviz. Please make sure the PATH variable is set in windows to the correct location, and that the product is installed'
 	except:
 		print 'Could not find graphviz. Please make sure the PATH variable is set in windows to the correct location, and that the product is installed'
