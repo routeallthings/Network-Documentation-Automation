@@ -400,7 +400,7 @@ def arpmacreport(iparptablelist,ipmactablelist,mactablelist,exportlocation):
 	ws1 = wb.active
 	# Continue on with work
 	ws1.title = "ARP Report"
-	ws1.append(['IP Address','MAC','Manufacturer','Source Device','Inteface','MAC Count on Interface'])
+	ws1.append(['IP Address','MAC','Manufacturer','Source Device','Interface','MAC Count on Interface'])
 	# Create ARP report by looking for closest hop interface
 	skiparpreport = 0
 	# Preload MAC DB
