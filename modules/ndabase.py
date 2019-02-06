@@ -125,18 +125,7 @@ from pprint import pprint
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter, column_index_from_string
 from collections import OrderedDict
-try:
-	import xlhelper
-except ImportError:
-	xlhelperinstallstatus = raw_input ('xlhelper module is missing, would you like to automatically install? (Y/N): ')
-	if 'y' in xlhelperinstallstatus.lower():
-		os.system('python -m pip install git+https://github.com/routeallthings/xlhelper.git')
-		import xlhelper
-	else:
-		print 'You selected an option other than yes. Please be aware that this script requires the use of xlhelper. Please install manually and retry'
-		print 'Exiting in 5 seconds'
-		time.sleep(5)
-		sys.exit()		
+import xlhelper	
 
 # PyPiWin32
 try:
