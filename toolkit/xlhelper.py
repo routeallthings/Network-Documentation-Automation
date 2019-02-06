@@ -48,7 +48,7 @@ def sheet_to_dict(file_path, sheet_name=None, header_row=1, start_col='A',
     wb = openpyxl.load_workbook(file_path, read_only=True, data_only=True)
 
     if sheet_name:
-        ws = wb.get_sheet_by_name(sheet_name)
+        ws = wb[sheet_name]
     else:
         ws = wb.active  # default to the first sheet in file
 
