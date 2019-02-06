@@ -147,7 +147,7 @@ def networksummaryreport(fullinventorylist,poeinterfacelist,exportlocation):
 				for poerow in poeinv:
 					poeint = poerow.get('Interface')
 					poename = poerow.get('Device Name')
-					if optstack != '':
+					if poestack != '':
 						poereg = re.compile('\S+' + str(poestack) + '\/\d\/\d')
 						if re.match(poereg,poeint):
 							powerusage = poerow.get('Power Usage')
